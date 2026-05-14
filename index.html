@@ -274,6 +274,59 @@ body::before {
   margin-bottom: 24px;
   animation: bounceIn .6s cubic-bezier(.36,.07,.19,.97);
   filter: drop-shadow(0 0 30px rgba(201,168,76,.6));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.thankyou-icon.robot-avatar {
+  width: 100px;
+  height: 100px;
+  background: linear-gradient(145deg, #3a3a5c, #2a2a4c);
+  border-radius: 50%;
+  border: 3px solid var(--gold);
+  box-shadow: 0 0 30px rgba(201,168,76,.4), inset 0 0 20px rgba(201,168,76,.2);
+  position: relative;
+}
+.thankyou-icon.robot-avatar::before {
+  content: '';
+  position: absolute;
+  top: 28px;
+  left: 20px;
+  width: 18px;
+  height: 18px;
+  background: var(--gold);
+  border-radius: 50%;
+  box-shadow: 42px 0 0 var(--gold), 0 0 10px var(--gold), 42px 0 10px var(--gold);
+  animation: blink 3s infinite;
+}
+.thankyou-icon.robot-avatar::after {
+  content: '';
+  position: absolute;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 6px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  border-radius: 3px;
+}
+@keyframes blink {
+  0%, 90%, 100% { opacity: 1; }
+  95% { opacity: 0.3; }
+}
+.thankyou-icon.robot-avatar .data-lines {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 4px;
+}
+.thankyou-icon.robot-avatar .data-lines span {
+  width: 3px;
+  height: 3px;
+  background: var(--gold);
+  border-radius: 50%;
 }
 @keyframes bounceIn {
   0%   { transform: scale(0); opacity: 0; }
@@ -570,13 +623,20 @@ function showThanks(isPositive) {
   const countdown = document.getElementById('countdown-msg');
 
   if (isPositive) {
-    icon.textContent = '🌟';
+    icon.innerHTML = `<svg viewBox="0 0 24 24" width="80" height="80" fill="var(--gold)">
+      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+    </svg>`;
     title.style.color = 'var(--gold)';
     title.textContent = '感谢您的好评！';
     msg.textContent = s.positiveMsg || '感谢您的好评，期待再次为您服务！';
     msgEn.textContent = s.positiveMsgEn || 'Thank you! We look forward to welcoming you again.';
   } else {
-    icon.textContent = '🙏';
+    icon.innerHTML = `
+      <div class="robot-avatar">
+        <div class="data-lines"><span></span><span></span><span></span></div>
+      </div>
+    `;
+    icon.classList.add('robot-avatar');
     title.style.color = 'var(--brown-200)';
     title.textContent = '感谢您的宝贵意见！';
     msg.textContent = s.negativeMsg || '非常抱歉给您带来不便，我们会认真改进！';
