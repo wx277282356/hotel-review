@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管理后台 | 城市酒店服务点评</title>
+<link rel="stylesheet" href="css/style.css">
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<!-- SheetJS for Excel export -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+body { background: var(--gray-100); }
+
+/* ── Grid layouts ────────────────────────────────────── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+}
+@media (max-width: 900px) { .dashboard-grid { grid-template-columns: 1fr; } }
+
+/* ── Login page ──────────────────────────────────────── */
+#login-page {
+  min-height: 100vh;
+  background: linear-gradient(160deg, var(--brown-900) 0%, var(--brown-800) 60%, var(--brown-900) 100%);
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+}
+#login-page::before {
+  content:'';
+  position:absolute;inset:0;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(201,168,76,.07) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(201,168,76,.07) 0%, transparent 50%);
+  pointer-events:none;
+}
+.login-box {
+  background: rgba(255,255,255,.97);
+  border-radius: var(--radius-xl);
+  padding: 52px 44px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: var(--shadow-lg), 0 0 60px rgba(201,168,76,.15);
+  position: relative;
+  border-top: 4px solid var(--gold);
+}
+.login-logo { text-align:center; margin-bottom:28px; }
+.login-logo img { width: 80px; height: 80px; object-fit:contain; }
+.login-title {
+  text-align:center;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--brown-900);
+  margin-bottom: 4px;
+  letter-spacing:.08em;
+}
+.login-sub {
+  text-align:center;
+  font-size:.8rem;
+  color:var(--gray-600);
+  margin-bottom:32px;
+  letter-spacing:.12em;
+  font-family:'Cormorant Garamond',serif;
+}
+
+/* ── Sidebar active indicator ────────────────────────── */
+.sidebar-hotel-name {
+  font-size:.85rem;
+  color:var(--gold);
+  letter-spacing:.08em;
+  text-align:center;
+  margin-top:6px;
+  font-weight:600;
+}
+.sidebar-user-info {
+  padding:16px 24px;
+  border-top:1px solid rgba(201,168,76,.15);
+  display:flex; align-items:center; gap:10px;
+}
+.user-avatar {
+  width:36px;height:36px;
+  background:var(--gold);
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.85rem;font-weight:700;
+  color:var(--brown-900);
+  flex-shrink:0;
+}
+
+/* ── Filter bar ───────────────────────────────────────── */
+.filter-bar {
+  background:var(--white);
+  border-radius:var(--radius-md);
+  padding:16px 20px;
+  margin-bottom:20px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:12px;
+  align-items:flex-end;
+  box-shadow:var(--shadow-sm);
+}
+.filter-group { display:flex; flex-direction:column; gap:4px; }
+.filter-label { font-size:.75rem; font-weight:600; color:var(--gray-600); }
+.filter-select {
+  padding:9px 12px;
+  border:1.5px solid var(--gray-200);
+  border-radius:var(--radius-sm);
+  font-size:.875rem;
+  color:var(--gray-800);
+  background:var(--white);
+  cursor:pointer;
+  outline:none;
+  min-width:120px;
+}
+.filter-select:focus { border-color:var(--gold); }
+
+/* ── Reason rank list ─────────────────────────────────── */
+.reason-rank-item {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:10px 0;
+  border-bottom:1px solid var(--gray-200);
+}
+.reason-rank-item:last-child { border:none; }
+.reason-rank-name { flex:1; font-size:.9rem; color:var(--brown-800); font-weight:500; }
+.reason-rank-count { font-weight:700; color:var(--brown-600); font-size:.95rem; min-width:30px; text-align:right; }
+
+/* ── Settings form ────────────────────────────────────── */
+.settings-section {
+  background:var(--white);
+  border-radius:var(--radius-lg);
+  padding:28px;
+  margin-bottom:20px;
+  box-shadow:var(--shadow-sm);
+}
+.settings-section-title {
+  font-size:1rem;
+  font-weight:700;
+  color:var(--brown-800);
+  margin-bottom:20px;
+  padding-bottom:12px;
+  border-bottom:2px solid var(--gold-light);
+  display:flex; align-items:center; gap:8px;
+}
+
+/* ── Reason management ────────────────────────────────── */
+.reason-item-row {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 0;
+  border-bottom:1px solid var(--gray-200);
+}
+.reason-item-row:last-child { border:none; }
+
+/* ── User management ──────────────────────────────────── */
+.user-row {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:12px 16px;
+  border-radius:var(--radius-sm);
+  background:var(--brown-50);
+  margin-bottom:10px;
+}
+
+/* ── Report tab buttons ───────────────────────────────── */
+.period-tabs {
+  display:flex;
+  gap:8px;
+  margin-bottom:16px;
+  background:var(--gray-200);
+  border-radius:var(--radius-sm);
+  padding:4px;
+}
+.period-tab {
+  flex:1;
+  padding:9px 16px;
+  border:none;
+  border-radius:6px;
+  background:transparent;
+  color:var(--gray-600);
+  font-size:.85rem;
+  font-weight:600;
+  cursor:pointer;
+  transition:var(--transition);
+}
+.period-tab.active {
+  background:var(--white);
+  color:var(--brown-800);
+  box-shadow:var(--shadow-sm);
+}
+
+/* ── PMS badge ────────────────────────────────────────── */
+.pms-badge {
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 10px;
+  border-radius:100px;
+  font-size:.75rem;font-weight:600;
+  background:var(--brown-100);
+  color:var(--brown-600);
+  border:1px solid var(--brown-200);
+}
+.pms-badge.ready { background:#e8f5ec; color:#2d6a3f; border-color:#a8d5b5; }
+</style>
+</head>
+<body>
+
+<!-- ╔══ LOGIN PAGE ══════════════════════════════════════════╗ -->
+<div id="login-page">
+  <div class="login-box">
+    <div class="login-logo">
+      <img id="login-logo" src="assets/logo.jpg" alt="Logo" onerror="this.style.display='none'">
+    </div>
+    <div class="login-title" id="login-hotel-name">城市酒店</div>
+    <div class="login-sub">SERVICE REVIEW · MANAGEMENT SYSTEM</div>
+
+    <div class="form-group">
+      <label class="form-label">账号 Username</label>
+      <input class="form-control" type="text" id="login-user" placeholder="请输入账号" autocomplete="username">
+    </div>
+    <div class="form-group">
+      <label class="form-label">密码 Password</label>
+      <input class="form-control" type="password" id="login-pass" placeholder="请输入密码" autocomplete="current-password">
+    </div>
+
+    <div id="login-error" class="hidden" style="color:#c0392b;font-size:.85rem;margin-bottom:12px;text-align:center;padding:10px;background:#fee;border-radius:8px;">
+      账号或密码错误 / Incorrect username or password
+    </div>
+
+    <button class="btn btn-gold w-full" style="margin-top:8px;" onclick="doLogin()">
+      登 录 &nbsp; LOGIN
+    </button>
+
+    <div style="text-align:center;margin-top:20px;font-size:.75rem;color:var(--gray-400);">
+      默认账号：admin / staff &nbsp;|&nbsp; 密码：admin123 / staff123
+    </div>
+  </div>
+</div>
+<!-- ╚══ END LOGIN ══════════════════════════════════════════════╝ -->
+
+
+<!-- ╔══ ADMIN APP ═══════════════════════════════════════════╗ -->
+<div id="admin-app" class="hidden">
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <img id="sidebar-logo" src="assets/logo.jpg" alt="Logo" style="width:56px;height:56px;object-fit:contain;border-radius:10px;" onerror="this.style.display='none'">
+      <div class="sidebar-hotel-name" id="sidebar-hotel-name">城市酒店</div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-page="dashboard" onclick="navigate('dashboard')">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        数据看板
+      </button>
+      <button class="nav-item" data-page="report" onclick="navigate('report')">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 17H7A5 5 0 1 1 7 7h2"/><path d="M15 7h2a5 5 0 1 1 0 10h-2"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        统计报表
+      </button>
+      <button class="nav-item" data-page="records" onclick="navigate('records')">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+        评价记录
+      </button>
+      <button class="nav-item manager-only" data-page="settings" onclick="navigate('settings')">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 0-14.14 0M4.93 19.07a10 10 0 0 0 14.14 0"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2"/></svg>
+        系统设置
+      </button>
+      <button class="nav-item manager-only" data-page="users" onclick="navigate('users')">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        账号管理
+      </button>
+    </nav>
+
+    <div class="sidebar-user-info">
+      <div class="user-avatar" id="sidebar-avatar">?</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:.85rem;font-weight:600;color:var(--gold-light);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="sidebar-username">-</div>
+        <div style="font-size:.72rem;color:var(--brown-400);" id="sidebar-role">-</div>
+      </div>
+      <button onclick="doLogout()" title="退出" style="background:none;border:none;color:var(--brown-400);cursor:pointer;padding:4px;">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main body -->
+  <div class="admin-body">
+    <div class="admin-topbar">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button class="btn btn-sm btn-outline" id="sidebar-toggle" onclick="toggleSidebar()" style="display:none;">☰</button>
+        <div style="font-size:1rem;font-weight:700;color:var(--brown-800);" id="page-title">数据看板</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <a href="index.html" target="_blank" class="btn btn-sm btn-outline">
+          📱 前台展示
+        </a>
+        <div style="font-size:.8rem;color:var(--gray-600);" id="topbar-time"></div>
+      </div>
+    </div>
+
+    <div class="admin-content">
+
+      <!-- ── PAGE: Dashboard ─────────────────────────────────── -->
+      <div class="page active" id="page-dashboard">
+        <div class="stats-grid" id="today-stats"></div>
+        <div class="dashboard-grid">
+          <div class="card">
+            <div class="card-title">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              近7天趋势 / 7-Day Trend
+            </div>
+            <div class="chart-wrap"><canvas id="chart-trend"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-title">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+              好/差评占比 / Rating Distribution
+            </div>
+            <div class="chart-wrap" style="height:220px;"><canvas id="chart-pie"></canvas></div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:20px;">
+          <div class="card-title">差评原因排行 / Top Negative Reasons</div>
+          <div id="reason-rank-list"></div>
+        </div>
+      </div>
+      <!-- ── END Dashboard ────────────────────────────────────── -->
+
+      <!-- ── PAGE: Report ────────────────────────────────────── -->
+      <div class="page" id="page-report">
+        <div class="filter-bar">
+          <div class="filter-group">
+            <span class="filter-label">统计周期</span>
+            <div class="period-tabs" style="margin-bottom:0;gap:6px;background:var(--gray-200);border-radius:8px;padding:3px;">
+              <button class="period-tab active" data-period="day" onclick="setPeriod('day')">按天</button>
+              <button class="period-tab" data-period="week" onclick="setPeriod('week')">按周</button>
+              <button class="period-tab" data-period="month" onclick="setPeriod('month')">按月</button>
+            </div>
+          </div>
+          <div class="filter-group">
+            <span class="filter-label">开始日期</span>
+            <input type="date" class="filter-select" id="rpt-start" oninput="renderReport()">
+          </div>
+          <div class="filter-group">
+            <span class="filter-label">结束日期</span>
+            <input type="date" class="filter-select" id="rpt-end" oninput="renderReport()">
+          </div>
+          <div class="filter-group">
+            <span class="filter-label">类型筛选</span>
+            <select class="filter-select" id="rpt-type" onchange="renderReport()">
+              <option value="">全部</option>
+              <option value="positive">好评</option>
+              <option value="negative">差评</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <span class="filter-label">差评原因</span>
+            <select class="filter-select" id="rpt-reason" onchange="renderReport()">
+              <option value="">全部原因</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <span class="filter-label">操作工号</span>
+            <select class="filter-select" id="rpt-staff" onchange="renderReport()">
+              <option value="">全部工号</option>
+            </select>
+          </div>
+          <button class="btn btn-gold btn-sm manager-only" onclick="exportExcel()">
+            📥 导出 Excel
+          </button>
+        </div>
+
+        <div class="card" style="margin-bottom:20px;">
+          <div class="card-title">统计图表</div>
+          <div class="chart-wrap"><canvas id="chart-report"></canvas></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title" style="justify-content:space-between;">
+            <span>汇总数据</span>
+            <span id="rpt-summary" style="font-size:.85rem;font-weight:400;color:var(--gray-600);"></span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>周期</th><th>好评数</th><th>差评数</th><th>合计</th><th>好评率</th>
+              </tr></thead>
+              <tbody id="rpt-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:20px;">
+          <div class="card-title">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            按工号统计 / By Staff Account
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>工号</th><th>姓名</th><th>好评数</th><th>差评数</th><th>合计</th><th>好评率</th>
+              </tr></thead>
+              <tbody id="rpt-staff-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!-- ── END Report ──────────────────────────────────────── -->
+
+      <!-- ── PAGE: Records ───────────────────────────────────── -->
+      <div class="page" id="page-records">
+        <div class="filter-bar">
+          <div class="filter-group">
+            <span class="filter-label">开始日期</span>
+            <input type="date" class="filter-select" id="rec-start" oninput="renderRecords()">
+          </div>
+          <div class="filter-group">
+            <span class="filter-label">结束日期</span>
+            <input type="date" class="filter-select" id="rec-end" oninput="renderRecords()">
+          </div>
+          <div class="filter-group">
+            <span class="filter-label">类型</span>
+            <select class="filter-select" id="rec-type" onchange="renderRecords()">
+              <option value="">全部</option>
+              <option value="positive">好评</option>
+              <option value="negative">差评</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <span class="filter-label">差评原因</span>
+            <select class="filter-select" id="rec-reason" onchange="renderRecords()">
+              <option value="">全部原因</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <span class="filter-label">操作工号</span>
+            <select class="filter-select" id="rec-staff" onchange="renderRecords()">
+              <option value="">全部工号</option>
+            </select>
+          </div>
+          <button class="btn btn-gold btn-sm manager-only" onclick="exportRecordsExcel()">
+            📥 导出 Excel
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="card-title" style="justify-content:space-between;">
+            <span>评价明细记录</span>
+            <span id="rec-count" style="font-size:.85rem;font-weight:400;color:var(--gray-600);"></span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>时间</th><th>评价</th><th>差评原因</th><th>操作工号</th><th>操作</th>
+              </tr></thead>
+              <tbody id="rec-table-body"></tbody>
+            </table>
+          </div>
+          <div style="margin-top:12px;display:flex;justify-content:center;gap:8px;" id="rec-pagination"></div>
+        </div>
+      </div>
+      <!-- ── END Records ─────────────────────────────────────── -->
+
+      <!-- ── PAGE: Settings (manager only) ──────────────────── -->
+      <div class="page" id="page-settings">
+        <div class="settings-section">
+          <div class="settings-section-title">🏨 酒店基础信息</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div class="form-group">
+              <label class="form-label">酒店名称（中文）</label>
+              <input class="form-control" id="s-hotel-zh" placeholder="城市酒店">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Hotel Name (English)</label>
+              <input class="form-control" id="s-hotel-en" placeholder="City Hotel">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">酒店 LOGO 图片</label>
+            <div style="display:flex;align-items:center;gap:16px;">
+              <img id="logo-preview" src="assets/logo.jpg" style="width:64px;height:64px;object-fit:contain;border-radius:12px;border:2px solid var(--gold-light);" onerror="this.style.display='none'">
+              <label class="btn btn-outline btn-sm" style="cursor:pointer;">
+                📁 上传 LOGO
+                <input type="file" accept="image/*" id="logo-upload" style="display:none;" onchange="uploadLogo(this)">
+              </label>
+              <span style="font-size:.78rem;color:var(--gray-400);">支持 JPG/PNG，建议正方形</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-title">🔊 语音提醒设置</div>
+          <div class="form-group">
+            <label class="form-label">语音提醒内容（中文）</label>
+            <textarea class="form-control" id="s-voice-zh" rows="2" placeholder="尊敬的客人，感谢您的入住..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Voice Prompt (English)</label>
+            <textarea class="form-control" id="s-voice-en" rows="2" placeholder="Dear guest, thank you for staying..."></textarea>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-title">💬 感谢语设置</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div>
+              <div class="form-group">
+                <label class="form-label">好评感谢语（中文）</label>
+                <textarea class="form-control" id="s-pos-zh" rows="2"></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Positive Message (English)</label>
+                <textarea class="form-control" id="s-pos-en" rows="2"></textarea>
+              </div>
+            </div>
+            <div>
+              <div class="form-group">
+                <label class="form-label">差评感谢语（中文）</label>
+                <textarea class="form-control" id="s-neg-zh" rows="2"></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Negative Message (English)</label>
+                <textarea class="form-control" id="s-neg-en" rows="2"></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">提交后自动返回时间（秒）</label>
+            <input class="form-control" type="number" id="s-auto-return" min="2" max="10" style="max-width:120px;">
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-title">
+            📡 捷信达 PMS 接口
+            <span class="pms-badge">预留接口 · 待对接</span>
+          </div>
+          <div style="background:var(--brown-50);border-radius:var(--radius-sm);padding:16px;font-size:.85rem;color:var(--brown-600);line-height:1.7;border-left:3px solid var(--gold);">
+            <strong>接口预留说明：</strong><br>
+            当前系统已预留与捷信达 GSHIS PMS 的接口框架。<br>
+            待 PMS 提供 API 接口文档后，可一键开启，将客人的好评/差评实时推送至 PMS 宾客意见反馈模块。<br>
+            <span style="color:var(--gray-400);font-size:.78rem;">* 需提供 PMS API 地址、认证 Token 及接口字段映射文档</span>
+          </div>
+          <div style="margin-top:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+            <div class="form-group" style="flex:1;min-width:240px;margin-bottom:0;">
+              <label class="form-label">PMS API 地址（预留）</label>
+              <input class="form-control" id="s-pms-endpoint" placeholder="https://your-pms-server.com" disabled>
+            </div>
+            <div class="form-group" style="flex:1;min-width:200px;margin-bottom:0;">
+              <label class="form-label">API Token（预留）</label>
+              <input class="form-control" id="s-pms-token" type="password" placeholder="待配置" disabled>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:20px;">
+              <label class="toggle-switch">
+                <input type="checkbox" id="s-pms-enabled" disabled>
+                <span class="toggle-slider"></span>
+              </label>
+              <span style="font-size:.85rem;color:var(--gray-600);">启用同步（待对接）</span>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn btn-gold" onclick="saveSettings()">💾 保存设置 Save</button>
+      </div>
+      <!-- ── END Settings ────────────────────────────────────── -->
+
+      <!-- ── PAGE: Users (manager only) ─────────────────────── -->
+      <div class="page" id="page-users">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+          <h2 style="font-size:1.1rem;font-weight:700;color:var(--brown-800);">账号管理 / User Management</h2>
+          <button class="btn btn-gold btn-sm" onclick="showAddUserModal()">＋ 新增账号</button>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-title">📋 差评原因管理</div>
+          <div id="reasons-manage-list"></div>
+          <button class="btn btn-outline btn-sm" style="margin-top:14px;" onclick="showAddReasonModal()">＋ 添加差评原因</button>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-title">👥 系统账号</div>
+          <div id="users-list"></div>
+        </div>
+      </div>
+      <!-- ── END Users ───────────────────────────────────────── -->
+
+    </div><!-- /admin-content -->
+  </div><!-- /admin-body -->
+</div><!-- /admin-app -->
+<!-- ╚══ END ADMIN APP ══════════════════════════════════════════╝ -->
+
+
+<!-- ── Modals ──────────────────────────────────────────────────── -->
+<div class="modal-overlay hidden" id="modal-add-user">
+  <div class="modal">
+    <div style="font-size:1.1rem;font-weight:700;color:var(--brown-900);margin-bottom:24px;" id="user-modal-title">新增账号</div>
+    <input type="hidden" id="edit-user-id">
+    <div class="form-group"><label class="form-label">姓名 Name</label><input class="form-control" id="u-name" placeholder="如：王店总"></div>
+    <div class="form-group"><label class="form-label">用户名 Username</label><input class="form-control" id="u-username" placeholder="登录账号"></div>
+    <div class="form-group"><label class="form-label">密码 Password</label><input class="form-control" type="password" id="u-password" placeholder="留空则不修改密码"></div>
+    <div class="form-group">
+      <label class="form-label">权限 Role</label>
+      <select class="form-control" id="u-role">
+        <option value="manager">店总 Manager（完整权限）</option>
+        <option value="staff">前台 Front Desk（查看+无导出）</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:20px;">
+      <button class="btn btn-outline" onclick="closeModal('modal-add-user')">取消</button>
+      <button class="btn btn-gold" onclick="saveUser()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="modal-add-reason">
+  <div class="modal">
+    <div style="font-size:1.1rem;font-weight:700;color:var(--brown-900);margin-bottom:24px;" id="reason-modal-title">添加差评原因</div>
+    <input type="hidden" id="edit-reason-id">
+    <div class="form-group"><label class="form-label">原因（中文）</label><input class="form-control" id="r-label-zh" placeholder="如：服务差"></div>
+    <div class="form-group"><label class="form-label">Reason (English)</label><input class="form-control" id="r-label-en" placeholder="e.g. Poor Service"></div>
+    <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:20px;">
+      <button class="btn btn-outline" onclick="closeModal('modal-add-reason')">取消</button>
+      <button class="btn btn-gold" onclick="saveReason()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- JS -->
+<script src="js/db.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  Admin Controller
+// ═══════════════════════════════════════════════════════════════
+
+let currentUser = null;
+let currentPeriod = 'day';
+let chartTrend = null;
+let chartPie = null;
+let chartReport = null;
+let recPage = 1;
+const REC_PAGE_SIZE = 20;
+
+// ── Auth ──────────────────────────────────────────────────────
+function doLogin() {
+  const u = document.getElementById('login-user').value.trim();
+  const p = document.getElementById('login-pass').value.trim();
+  const user = DB.login(u, p);
+  if (!user) {
+    document.getElementById('login-error').classList.remove('hidden');
+    return;
+  }
+  currentUser = user;
+  localStorage.setItem('hr_session', JSON.stringify(user));
+  startAdmin();
+}
+
+function doLogout() {
+  currentUser = null;
+  localStorage.removeItem('hr_session');
+  document.getElementById('admin-app').classList.add('hidden');
+  document.getElementById('login-page').style.display = '';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-error').classList.add('hidden');
+}
+
+function checkSession() {
+  const saved = localStorage.getItem('hr_session');
+  if (saved) {
+    try {
+      const user = JSON.parse(saved);
+      const found = DB.login(user.username, user.password);
+      if (found) { currentUser = found; return true; }
+    } catch (e) {}
+  }
+  return false;
+}
+
+function startAdmin() {
+  document.getElementById('login-page').style.display = 'none';
+  document.getElementById('admin-app').classList.remove('hidden');
+  applySidebarUser();
+  applyRoleVisibility();
+  loadSettingsForm();
+  renderReasonSelects();
+  renderStaffSelects();
+  navigate('dashboard');
+  updateTopbarClock();
+  setInterval(updateTopbarClock, 1000);
+}
+
+function applySidebarUser() {
+  const s = DB.getSettings();
+  document.getElementById('sidebar-hotel-name').textContent = s.hotelName || '城市酒店';
+  document.getElementById('login-hotel-name').textContent = s.hotelName || '城市酒店';
+  document.getElementById('sidebar-username').textContent = currentUser.name;
+  document.getElementById('sidebar-role').textContent = currentUser.role === 'manager' ? '店总 Manager' : '前台 Front Desk';
+  document.getElementById('sidebar-avatar').textContent = currentUser.name.charAt(0);
+  const logo = DB.getLogo();
+  if (logo) {
+    document.getElementById('sidebar-logo').src = logo;
+    document.getElementById('login-logo').src = logo;
+  }
+}
+
+function applyRoleVisibility() {
+  document.querySelectorAll('.manager-only').forEach(el => {
+    el.style.display = currentUser.role === 'manager' ? '' : 'none';
+  });
+}
+
+function updateTopbarClock() {
+  const now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  document.getElementById('topbar-time').textContent =
+    `${now.getFullYear()}/${pad(now.getMonth()+1)}/${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+}
+
+// ── Navigation ────────────────────────────────────────────────
+const PAGE_TITLES = { dashboard:'数据看板', report:'统计报表', records:'评价记录', settings:'系统设置', users:'账号管理' };
+
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(b => {
+    b.classList.toggle('active', b.dataset.page === page);
+  });
+  document.getElementById('page-title').textContent = PAGE_TITLES[page] || page;
+
+  if (page === 'dashboard') renderDashboard();
+  else if (page === 'report') { initReportDates(); renderStaffSelects(); renderReport(); }
+  else if (page === 'records') { initRecDates(); renderStaffSelects(); renderRecords(); }
+  else if (page === 'settings') loadSettingsForm();
+  else if (page === 'users') { renderReasonManage(); renderUsersList(); }
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+// ── Dashboard ─────────────────────────────────────────────────
+function renderDashboard() {
+  const today = new Date().toISOString().split('T')[0];
+  const todayReviews = DB.queryReviews({ startDate: today, endDate: today });
+  const allReviews = DB.getReviews();
+
+  const todayPos = todayReviews.filter(r => r.type === 'positive').length;
+  const todayNeg = todayReviews.filter(r => r.type === 'negative').length;
+  const allPos = allReviews.filter(r => r.type === 'positive').length;
+  const allNeg = allReviews.filter(r => r.type === 'negative').length;
+  const totalRate = allReviews.length > 0 ? Math.round(allPos / allReviews.length * 100) : 0;
+
+  document.getElementById('today-stats').innerHTML = `
+    <div class="stat-card"><div class="stat-num" style="color:var(--positive)">${todayPos}</div><div class="stat-label">今日好评</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--negative)">${todayNeg}</div><div class="stat-label">今日差评</div></div>
+    <div class="stat-card"><div class="stat-num">${todayReviews.length}</div><div class="stat-label">今日合计</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--gold)">${allReviews.length}</div><div class="stat-label">累计总评价</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--positive)">${totalRate}%</div><div class="stat-label">累计好评率</div></div>
+  `;
+
+  // 7-day trend
+  const days = [];
+  const posData = [], negData = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const key = d.toISOString().split('T')[0];
+    days.push(key.slice(5));
+    const dr = DB.queryReviews({ startDate: key, endDate: key });
+    posData.push(dr.filter(r => r.type === 'positive').length);
+    negData.push(dr.filter(r => r.type === 'negative').length);
+  }
+
+  if (chartTrend) chartTrend.destroy();
+  chartTrend = new Chart(document.getElementById('chart-trend'), {
+    type: 'bar',
+    data: {
+      labels: days,
+      datasets: [
+        { label: '好评', data: posData, backgroundColor: 'rgba(74,140,94,.7)', borderRadius: 6 },
+        { label: '差评', data: negData, backgroundColor: 'rgba(140,61,61,.7)', borderRadius: 6 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top' } },
+      scales: { x: { grid: { display: false } }, y: { beginAtZero: true, ticks: { precision: 0 } } }
+    }
+  });
+
+  // Pie chart
+  if (chartPie) chartPie.destroy();
+  chartPie = new Chart(document.getElementById('chart-pie'), {
+    type: 'doughnut',
+    data: {
+      labels: ['好评', '差评'],
+      datasets: [{ data: [allPos, allNeg], backgroundColor: ['rgba(74,140,94,.85)', 'rgba(140,61,61,.85)'], borderWidth: 0, hoverOffset: 6 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '65%',
+      plugins: { legend: { position: 'bottom' } }
+    }
+  });
+
+  // Reason rank
+  const stats = DB.negReasonStats();
+  const rankList = document.getElementById('reason-rank-list');
+  if (stats.length === 0) {
+    rankList.innerHTML = '<div style="color:var(--gray-400);text-align:center;padding:20px;">暂无差评数据</div>';
+    return;
+  }
+  const max = stats[0].count;
+  rankList.innerHTML = stats.map((s, i) => `
+    <div class="reason-rank-item">
+      <span style="font-weight:700;color:var(--gold);min-width:24px;">#${i+1}</span>
+      <span class="reason-rank-name">${s.reason}</span>
+      <div style="flex:1;max-width:200px;">
+        <div class="progress-bar"><div class="progress-fill" style="width:${Math.round(s.count/max*100)}%"></div></div>
+      </div>
+      <span class="reason-rank-count">${s.count}</span>
+    </div>
+  `).join('');
+}
+
+// ── Report ────────────────────────────────────────────────────
+function setPeriod(p) {
+  currentPeriod = p;
+  document.querySelectorAll('.period-tab').forEach(b => b.classList.toggle('active', b.dataset.period === p));
+  renderReport();
+}
+
+function initReportDates() {
+  if (!document.getElementById('rpt-start').value) {
+    const d = new Date(); d.setDate(d.getDate() - 29);
+    document.getElementById('rpt-start').value = d.toISOString().split('T')[0];
+    document.getElementById('rpt-end').value = new Date().toISOString().split('T')[0];
+  }
+}
+
+function renderReport() {
+  const start = document.getElementById('rpt-start').value;
+  const end = document.getElementById('rpt-end').value;
+  const type = document.getElementById('rpt-type').value;
+  const reason = document.getElementById('rpt-reason').value;
+  const staff = document.getElementById('rpt-staff').value;
+
+  const stats = DB.statsBy(currentPeriod, start || undefined, end || undefined);
+  const labels = stats.map(s => s.period);
+  const posData = stats.map(s => s.positive);
+  const negData = stats.map(s => s.negative);
+
+  if (chartReport) chartReport.destroy();
+  chartReport = new Chart(document.getElementById('chart-report'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: '好评', data: posData, backgroundColor: 'rgba(74,140,94,.75)', borderRadius: 6 },
+        { label: '差评', data: negData, backgroundColor: 'rgba(140,61,61,.75)', borderRadius: 6 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top' } },
+      scales: { x: { stacked: false, grid: { display: false } }, y: { beginAtZero: true, ticks: { precision: 0 } } }
+    }
+  });
+
+  // 汇总表（按周期）
+  const tbody = document.getElementById('rpt-table-body');
+  let totalPos = 0, totalNeg = 0;
+  tbody.innerHTML = stats.map(s => {
+    totalPos += s.positive; totalNeg += s.negative;
+    const rate = s.total > 0 ? Math.round(s.positive / s.total * 100) : 0;
+    return `<tr>
+      <td>${s.period}</td>
+      <td><span class="badge badge-positive">${s.positive}</span></td>
+      <td><span class="badge badge-negative">${s.negative}</span></td>
+      <td>${s.total}</td>
+      <td><strong style="color:var(--positive)">${rate}%</strong></td>
+    </tr>`;
+  }).join('');
+
+  const total = totalPos + totalNeg;
+  const rate = total > 0 ? Math.round(totalPos / total * 100) : 0;
+  document.getElementById('rpt-summary').textContent = `合计：好评 ${totalPos} / 差评 ${totalNeg} / 好评率 ${rate}%`;
+
+  // 按工号统计表
+  const staffStats = DB.statsByStaff(start || undefined, end || undefined);
+  const staffBody = document.getElementById('rpt-staff-body');
+  if (staffStats.length === 0) {
+    staffBody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--gray-400);padding:24px;">暂无数据（评价记录中暂无工号信息）</td></tr>';
+  } else {
+    staffBody.innerHTML = staffStats.map(s => {
+      const r = s.total > 0 ? Math.round(s.positive / s.total * 100) : 0;
+      return `<tr>
+        <td><code style="background:var(--brown-50);padding:2px 7px;border-radius:4px;font-size:.82rem;">${s.staffUsername}</code></td>
+        <td style="font-weight:600;">${s.staffName}</td>
+        <td><span class="badge badge-positive">${s.positive}</span></td>
+        <td><span class="badge badge-negative">${s.negative}</span></td>
+        <td>${s.total}</td>
+        <td><strong style="color:var(--positive)">${r}%</strong></td>
+      </tr>`;
+    }).join('');
+  }
+}
+
+// ── Records ───────────────────────────────────────────────────
+function initRecDates() {
+  if (!document.getElementById('rec-start').value) {
+    const d = new Date(); d.setDate(d.getDate() - 29);
+    document.getElementById('rec-start').value = d.toISOString().split('T')[0];
+    document.getElementById('rec-end').value = new Date().toISOString().split('T')[0];
+  }
+}
+
+function renderRecords() {
+  const start = document.getElementById('rec-start').value;
+  const end = document.getElementById('rec-end').value;
+  const type = document.getElementById('rec-type').value || undefined;
+  const reason = document.getElementById('rec-reason').value || undefined;
+  const staff = document.getElementById('rec-staff').value || undefined;
+
+  const reviews = DB.queryReviews({ startDate: start || undefined, endDate: end || undefined, type, reason, staff });
+  const total = reviews.length;
+  const totalPages = Math.max(1, Math.ceil(total / REC_PAGE_SIZE));
+  if (recPage > totalPages) recPage = 1;
+
+  document.getElementById('rec-count').textContent = `共 ${total} 条记录`;
+
+  const slice = reviews.slice((recPage-1)*REC_PAGE_SIZE, recPage*REC_PAGE_SIZE);
+  const tbody = document.getElementById('rec-table-body');
+  tbody.innerHTML = slice.map(r => {
+    const dt = new Date(r.createdAt);
+    const timeStr = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+    const typeBadge = r.type === 'positive'
+      ? '<span class="badge badge-positive">😊 好评</span>'
+      : '<span class="badge badge-negative">😞 差评</span>';
+    const reasons = (r.reasons || []).join('、') || '-';
+    const staffInfo = r.staffUsername
+      ? `<span style="font-size:.82rem;"><code style="background:var(--brown-50);padding:1px 6px;border-radius:4px;">${r.staffUsername}</code><br><span style="color:var(--gray-500);">${r.staffName || ''}</span></span>`
+      : '<span style="color:var(--gray-300);font-size:.8rem;">-</span>';
+    return `<tr>
+      <td style="white-space:nowrap;">${timeStr}</td>
+      <td>${typeBadge}</td>
+      <td style="color:var(--gray-600);">${reasons}</td>
+      <td>${staffInfo}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteRecord(${r.id})">删除</button></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--gray-400);padding:32px;">暂无数据</td></tr>';
+
+  // Pagination
+  const pg = document.getElementById('rec-pagination');
+  pg.innerHTML = '';
+  if (totalPages > 1) {
+    for (let i = 1; i <= totalPages; i++) {
+      const btn = document.createElement('button');
+      btn.className = `btn btn-sm ${i === recPage ? 'btn-gold' : 'btn-outline'}`;
+      btn.textContent = i;
+      btn.onclick = () => { recPage = i; renderRecords(); };
+      pg.appendChild(btn);
+    }
+  }
+}
+
+function deleteRecord(id) {
+  if (!confirm('确认删除该条评价记录？')) return;
+  DB.deleteReview(id);
+  renderRecords();
+  showToast('已删除');
+}
+
+// ── Reason & Staff selects ────────────────────────────────────
+function renderReasonSelects() {
+  const reasons = DB.getReasons().filter(r => r.active);
+  ['rpt-reason', 'rec-reason'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const cur = sel.value;
+    while (sel.options.length > 1) sel.remove(1);
+    reasons.forEach(r => {
+      const opt = new Option(r.label, r.label);
+      sel.appendChild(opt);
+    });
+    sel.value = cur;
+  });
+}
+
+function renderStaffSelects() {
+  // 从所有评价记录中提取出现过的工号，保持最新
+  const reviews = DB.getReviews();
+  const staffMap = {};
+  reviews.forEach(r => {
+    if (r.staffUsername) staffMap[r.staffUsername] = r.staffName || r.staffUsername;
+  });
+  // 也从用户表里补全
+  DB.getUsers().forEach(u => {
+    if (!staffMap[u.username]) staffMap[u.username] = u.name;
+  });
+
+  ['rpt-staff', 'rec-staff'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const cur = sel.value;
+    while (sel.options.length > 1) sel.remove(1);
+    Object.entries(staffMap).forEach(([username, name]) => {
+      const opt = new Option(`${username}（${name}）`, username);
+      sel.appendChild(opt);
+    });
+    sel.value = cur;
+  });
+}
+
+// ── Settings ──────────────────────────────────────────────────
+function loadSettingsForm() {
+  const s = DB.getSettings();
+  document.getElementById('s-hotel-zh').value = s.hotelName || '';
+  document.getElementById('s-hotel-en').value = s.hotelNameEn || '';
+  document.getElementById('s-voice-zh').value = s.voicePrompt || '';
+  document.getElementById('s-voice-en').value = s.voicePromptEn || '';
+  document.getElementById('s-pos-zh').value = s.positiveMsg || '';
+  document.getElementById('s-pos-en').value = s.positiveMsgEn || '';
+  document.getElementById('s-neg-zh').value = s.negativeMsg || '';
+  document.getElementById('s-neg-en').value = s.negativeMsgEn || '';
+  document.getElementById('s-auto-return').value = s.autoReturn || 4;
+
+  const logo = DB.getLogo();
+  if (logo) document.getElementById('logo-preview').src = logo;
+}
+
+function saveSettings() {
+  DB.saveSettings({
+    hotelName: document.getElementById('s-hotel-zh').value,
+    hotelNameEn: document.getElementById('s-hotel-en').value,
+    voicePrompt: document.getElementById('s-voice-zh').value,
+    voicePromptEn: document.getElementById('s-voice-en').value,
+    positiveMsg: document.getElementById('s-pos-zh').value,
+    positiveMsgEn: document.getElementById('s-pos-en').value,
+    negativeMsg: document.getElementById('s-neg-zh').value,
+    negativeMsgEn: document.getElementById('s-neg-en').value,
+    autoReturn: parseInt(document.getElementById('s-auto-return').value) || 4,
+  });
+  applySidebarUser();
+  showToast('✅ 设置已保存');
+}
+
+function uploadLogo(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const data = e.target.result;
+    DB.saveLogo(data);
+    document.getElementById('logo-preview').src = data;
+    document.getElementById('sidebar-logo').src = data;
+    showToast('✅ LOGO 已更新');
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── Reason manage ─────────────────────────────────────────────
+function renderReasonManage() {
+  const list = document.getElementById('reasons-manage-list');
+  const reasons = DB.getReasons();
+  list.innerHTML = reasons.map(r => `
+    <div class="reason-item-row">
+      <label class="toggle-switch">
+        <input type="checkbox" ${r.active ? 'checked' : ''} onchange="toggleReasonActive(${r.id}, this.checked)">
+        <span class="toggle-slider"></span>
+      </label>
+      <span style="flex:1;font-size:.9rem;color:var(--brown-800);">${r.label}</span>
+      <span style="font-size:.8rem;color:var(--gray-400);flex:1;">${r.labelEn}</span>
+      <button class="btn btn-sm btn-outline" onclick="editReason(${r.id})">编辑</button>
+      <button class="btn btn-sm btn-danger" onclick="deleteReason(${r.id})">删除</button>
+    </div>
+  `).join('') || '<div style="color:var(--gray-400);padding:16px;text-align:center;">暂无差评原因</div>';
+}
+
+function toggleReasonActive(id, active) {
+  DB.updateReason(id, { active });
+}
+
+function showAddReasonModal() {
+  document.getElementById('reason-modal-title').textContent = '添加差评原因';
+  document.getElementById('edit-reason-id').value = '';
+  document.getElementById('r-label-zh').value = '';
+  document.getElementById('r-label-en').value = '';
+  document.getElementById('modal-add-reason').classList.remove('hidden');
+}
+
+function editReason(id) {
+  const reasons = DB.getReasons();
+  const r = reasons.find(r => r.id === id);
+  if (!r) return;
+  document.getElementById('reason-modal-title').textContent = '编辑差评原因';
+  document.getElementById('edit-reason-id').value = id;
+  document.getElementById('r-label-zh').value = r.label;
+  document.getElementById('r-label-en').value = r.labelEn;
+  document.getElementById('modal-add-reason').classList.remove('hidden');
+}
+
+function saveReason() {
+  const zh = document.getElementById('r-label-zh').value.trim();
+  const en = document.getElementById('r-label-en').value.trim();
+  const id = document.getElementById('edit-reason-id').value;
+  if (!zh) { showToast('⚠ 请填写中文名称'); return; }
+
+  if (id) DB.updateReason(parseInt(id), { label: zh, labelEn: en });
+  else DB.addReason(zh, en);
+
+  closeModal('modal-add-reason');
+  renderReasonManage();
+  renderReasonSelects();
+  showToast('✅ 保存成功');
+}
+
+function deleteReason(id) {
+  if (!confirm('确认删除该差评原因？')) return;
+  DB.deleteReason(id);
+  renderReasonManage();
+  renderReasonSelects();
+  showToast('已删除');
+}
+
+// ── User manage ───────────────────────────────────────────────
+function renderUsersList() {
+  const users = DB.getUsers();
+  document.getElementById('users-list').innerHTML = users.map(u => `
+    <div class="user-row">
+      <div class="user-avatar" style="background:${u.role==='manager'?'var(--gold)':'var(--brown-400)'};">${u.name.charAt(0)}</div>
+      <div style="flex:1;">
+        <div style="font-weight:600;color:var(--brown-800);">${u.name} <span style="font-size:.75rem;color:var(--gray-400);">@${u.username}</span></div>
+        <div style="font-size:.8rem;color:var(--gray-600);">${u.role==='manager'?'店总 Manager':'前台 Front Desk'}</div>
+      </div>
+      <button class="btn btn-sm btn-outline" onclick="editUser(${u.id})">编辑</button>
+      ${u.id !== currentUser.id ? `<button class="btn btn-sm btn-danger" onclick="deleteUser(${u.id})">删除</button>` : '<span style="font-size:.75rem;color:var(--gray-400);">当前账号</span>'}
+    </div>
+  `).join('');
+}
+
+function showAddUserModal() {
+  document.getElementById('user-modal-title').textContent = '新增账号';
+  document.getElementById('edit-user-id').value = '';
+  document.getElementById('u-name').value = '';
+  document.getElementById('u-username').value = '';
+  document.getElementById('u-password').value = '';
+  document.getElementById('u-role').value = 'staff';
+  document.getElementById('modal-add-user').classList.remove('hidden');
+}
+
+function editUser(id) {
+  const users = DB.getUsers();
+  const u = users.find(u => u.id === id);
+  if (!u) return;
+  document.getElementById('user-modal-title').textContent = '编辑账号';
+  document.getElementById('edit-user-id').value = id;
+  document.getElementById('u-name').value = u.name;
+  document.getElementById('u-username').value = u.username;
+  document.getElementById('u-password').value = '';
+  document.getElementById('u-role').value = u.role;
+  document.getElementById('modal-add-user').classList.remove('hidden');
+}
+
+function saveUser() {
+  const name = document.getElementById('u-name').value.trim();
+  const username = document.getElementById('u-username').value.trim();
+  const password = document.getElementById('u-password').value.trim();
+  const role = document.getElementById('u-role').value;
+  const id = document.getElementById('edit-user-id').value;
+
+  if (!name || !username) { showToast('⚠ 请填写姓名和用户名'); return; }
+
+  if (id) {
+    const data = { name, username, role };
+    if (password) data.password = password;
+    DB.updateUser(parseInt(id), data);
+  } else {
+    if (!password) { showToast('⚠ 新账号请设置密码'); return; }
+    DB.addUser({ name, username, password, role, nameEn: name });
+  }
+
+  closeModal('modal-add-user');
+  renderUsersList();
+  showToast('✅ 保存成功');
+}
+
+function deleteUser(id) {
+  if (!confirm('确认删除该账号？')) return;
+  DB.deleteUser(id);
+  renderUsersList();
+  showToast('已删除');
+}
+
+// ── Export Excel ──────────────────────────────────────────────
+function exportExcel() {
+  const start = document.getElementById('rpt-start').value;
+  const end = document.getElementById('rpt-end').value;
+  const stats = DB.statsBy(currentPeriod, start || undefined, end || undefined);
+  const periodLabel = { day:'天', week:'周', month:'月' }[currentPeriod];
+
+  const s = DB.getSettings();
+  const hotelName = s.hotelName || '城市酒店';
+
+  const data = [
+    [`${hotelName} - 服务点评统计报表`],
+    [`统计周期：按${periodLabel}`, `时间范围：${start || '全部'} ~ ${end || '全部'}`],
+    [],
+    ['周期', '好评数', '差评数', '合计', '好评率'],
+    ...stats.map(s => [s.period, s.positive, s.negative, s.total,
+      s.total > 0 ? (s.positive/s.total*100).toFixed(1)+'%' : '0%'])
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [{ wch: 14 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '统计报表');
+
+  // 差评原因统计Sheet
+  const reasonStats = DB.negReasonStats(start || undefined, end || undefined);
+  const wsR = XLSX.utils.aoa_to_sheet([
+    [`${hotelName} - 差评原因统计`],
+    [],
+    ['差评原因', '次数'],
+    ...reasonStats.map(r => [r.reason, r.count])
+  ]);
+  wsR['!cols'] = [{ wch: 20 }, { wch: 8 }];
+  XLSX.utils.book_append_sheet(wb, wsR, '差评原因');
+
+  // 按工号统计Sheet
+  const staffStats = DB.statsByStaff(start || undefined, end || undefined);
+  const wsS = XLSX.utils.aoa_to_sheet([
+    [`${hotelName} - 按工号统计`],
+    [`时间范围：${start || '全部'} ~ ${end || '全部'}`],
+    [],
+    ['工号', '员工姓名', '好评数', '差评数', '合计', '好评率'],
+    ...staffStats.map(s => [
+      s.staffUsername, s.staffName, s.positive, s.negative, s.total,
+      s.total > 0 ? (s.positive/s.total*100).toFixed(1)+'%' : '0%'
+    ])
+  ]);
+  wsS['!cols'] = [{ wch: 14 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }];
+  XLSX.utils.book_append_sheet(wb, wsS, '按工号统计');
+
+  const fileName = `${hotelName}_服务点评统计_${new Date().toISOString().split('T')[0]}.xlsx`;
+  XLSX.writeFile(wb, fileName);
+  showToast('✅ 报表已导出');
+}
+
+function exportRecordsExcel() {
+  const start = document.getElementById('rec-start').value;
+  const end = document.getElementById('rec-end').value;
+  const type = document.getElementById('rec-type').value || undefined;
+  const reason = document.getElementById('rec-reason').value || undefined;
+  const staff = document.getElementById('rec-staff').value || undefined;
+  const reviews = DB.queryReviews({ startDate: start || undefined, endDate: end || undefined, type, reason, staff });
+
+  const s = DB.getSettings();
+  const hotelName = s.hotelName || '城市酒店';
+
+  const data = [
+    [`${hotelName} - 服务点评明细记录`],
+    [`导出时间：${new Date().toLocaleString('zh-CN')}`],
+    [],
+    ['时间', '评价类型', '差评原因', '操作工号', '员工姓名', '备注'],
+    ...reviews.map(r => {
+      const dt = new Date(r.createdAt);
+      const timeStr = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}:${String(dt.getSeconds()).padStart(2,'0')}`;
+      return [timeStr, r.type === 'positive' ? '好评' : '差评', (r.reasons || []).join('、'), r.staffUsername || '', r.staffName || '', ''];
+    })
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [{ wch: 20 }, { wch: 10 }, { wch: 30 }, { wch: 12 }, { wch: 12 }, { wch: 15 }];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '评价明细');
+
+  const fileName = `${hotelName}_评价明细_${new Date().toISOString().split('T')[0]}.xlsx`;
+  XLSX.writeFile(wb, fileName);
+  showToast('✅ 明细已导出');
+}
+
+// ── Modal helpers ─────────────────────────────────────────────
+function closeModal(id) {
+  document.getElementById(id).classList.add('hidden');
+}
+
+// ── Toast ─────────────────────────────────────────────────────
+function showToast(msg, duration = 2200) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ── Enter key on login ────────────────────────────────────────
+document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('login-user').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('login-pass').focus(); });
+
+// ── Init ──────────────────────────────────────────────────────
+const s = DB.getSettings();
+document.getElementById('login-hotel-name').textContent = s.hotelName || '城市酒店';
+const logo = DB.getLogo();
+if (logo) document.getElementById('login-logo').src = logo;
+
+if (checkSession()) { startAdmin(); }
+</script>
+</body>
+</html>

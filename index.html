@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>服务点评 | 城市酒店</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+/* ─── Kiosk Layout ────────────────────────────────────────── */
+body {
+  background: linear-gradient(160deg, var(--brown-900) 0%, var(--brown-800) 50%, var(--brown-900) 100%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  font-family: 'PingFang SC','Microsoft YaHei',sans-serif;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Background decorative pattern */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(201,168,76,.06) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(201,168,76,.06) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* Decorative corner ornaments */
+.corner-ornament {
+  position: fixed;
+  width: 100px; height: 100px;
+  border: 1px solid rgba(201,168,76,.2);
+  pointer-events: none;
+}
+.corner-ornament.tl { top: 16px; left: 16px; border-right: none; border-bottom: none; }
+.corner-ornament.tr { top: 16px; right: 16px; border-left: none; border-bottom: none; }
+.corner-ornament.bl { bottom: 16px; left: 16px; border-right: none; border-top: none; }
+.corner-ornament.br { bottom: 16px; right: 16px; border-left: none; border-top: none; }
+
+/* ─── Screen containers ─────────────────────────────────── */
+.screen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 100vh;
+  padding: 48px 32px;
+  animation: screenIn .5s cubic-bezier(.4,0,.2,1);
+  position: relative;
+}
+.screen.active { display: flex; }
+@keyframes screenIn {
+  from { opacity:0; transform: translateY(30px) scale(.97); }
+  to   { opacity:1; transform: translateY(0) scale(1); }
+}
+
+/* ─── Main Screen ─────────────────────────────────────────── */
+.hotel-logo-wrap {
+  margin-bottom: 28px;
+  position: relative;
+}
+.hotel-logo-wrap img {
+  width: 120px; height: 120px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 20px rgba(201,168,76,.4));
+  animation: logoPulse 3s ease-in-out infinite;
+}
+@keyframes logoPulse {
+  0%,100% { filter: drop-shadow(0 0 20px rgba(201,168,76,.4)); }
+  50% { filter: drop-shadow(0 0 36px rgba(201,168,76,.7)); }
+}
+
+.title-zh {
+  font-size: clamp(2rem, 6vw, 3.2rem);
+  font-weight: 800;
+  color: var(--gold);
+  letter-spacing: .1em;
+  font-family: 'STSong','SimSun',serif;
+  text-shadow: 0 0 40px rgba(201,168,76,.5);
+  line-height: 1.2;
+  text-align: center;
+}
+.title-en {
+  font-size: clamp(.8rem, 2.5vw, 1.1rem);
+  color: var(--brown-300);
+  letter-spacing: .4em;
+  text-transform: uppercase;
+  font-family: 'Cormorant Garamond','Times New Roman',serif;
+  margin-top: 4px;
+  text-align: center;
+}
+
+.gold-ornament {
+  display: flex; align-items: center; gap: 16px;
+  margin: 20px 0;
+}
+.gold-ornament-line {
+  flex: 1; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  max-width: 120px;
+}
+.gold-ornament-diamond {
+  width: 8px; height: 8px;
+  background: var(--gold);
+  transform: rotate(45deg);
+  flex-shrink: 0;
+}
+
+.main-prompt-zh {
+  font-size: clamp(1.4rem, 4vw, 1.9rem);
+  color: var(--white);
+  text-align: center;
+  margin-bottom: 6px;
+  font-weight: 600;
+  letter-spacing: .05em;
+}
+.main-prompt-en {
+  font-size: clamp(.8rem, 2.2vw, 1rem);
+  color: var(--brown-300);
+  text-align: center;
+  margin-bottom: 40px;
+  letter-spacing: .1em;
+  font-family: 'Cormorant Garamond',serif;
+}
+
+/* ─── Review buttons ──────────────────────────────────────── */
+.review-buttons {
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+  max-width: 560px;
+}
+
+.review-btn {
+  flex: 1; min-width: 200px; max-width: 240px;
+  padding: 36px 24px;
+  border-radius: 24px;
+  border: none;
+  cursor: pointer;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 16px;
+  transition: all .3s cubic-bezier(.4,0,.2,1);
+  position: relative;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+.review-btn::before {
+  content: '';
+  position: absolute; inset: 0;
+  opacity: 0;
+  transition: opacity .3s;
+}
+.review-btn:active { transform: scale(.95); }
+
+.btn-positive {
+  background: linear-gradient(145deg, #1e4d30, #2d7a4a);
+  box-shadow: 0 8px 32px rgba(45,122,74,.5);
+}
+.btn-positive::before { background: radial-gradient(circle at 50% 50%, rgba(255,255,255,.15), transparent 70%); }
+.btn-positive:hover { box-shadow: 0 12px 48px rgba(45,122,74,.7); transform: translateY(-4px); }
+.btn-positive:hover::before { opacity: 1; }
+
+.btn-negative {
+  background: linear-gradient(145deg, #4d1e1e, #8c3333);
+  box-shadow: 0 8px 32px rgba(140,51,51,.5);
+}
+.btn-negative::before { background: radial-gradient(circle at 50% 50%, rgba(255,255,255,.15), transparent 70%); }
+.btn-negative:hover { box-shadow: 0 12px 48px rgba(140,51,51,.7); transform: translateY(-4px); }
+.btn-negative:hover::before { opacity: 1; }
+
+.review-btn-icon {
+  font-size: 4rem;
+  line-height: 1;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,.3));
+}
+.review-btn-text-zh {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: white;
+  letter-spacing: .1em;
+}
+.review-btn-text-en {
+  font-size: .75rem;
+  color: rgba(255,255,255,.7);
+  letter-spacing: .25em;
+  text-transform: uppercase;
+  font-family: 'Cormorant Garamond',serif;
+}
+
+.voice-btn {
+  margin-top: 32px;
+  padding: 12px 28px;
+  background: rgba(201,168,76,.15);
+  border: 1px solid rgba(201,168,76,.3);
+  border-radius: 100px;
+  color: var(--gold-light);
+  font-size: .85rem;
+  cursor: pointer;
+  display: flex; align-items: center; gap: 8px;
+  transition: var(--transition);
+}
+.voice-btn:hover { background: rgba(201,168,76,.25); }
+
+/* ─── Negative reasons screen ─────────────────────────────── */
+.neg-title-zh {
+  font-size: clamp(1.3rem, 4vw, 1.8rem);
+  font-weight: 700;
+  color: var(--gold);
+  text-align: center;
+  letter-spacing: .06em;
+}
+.neg-title-en {
+  font-size: .85rem;
+  color: var(--brown-300);
+  text-align: center;
+  letter-spacing: .2em;
+  margin-top: 4px;
+  font-family: 'Cormorant Garamond',serif;
+}
+.neg-subtitle {
+  color: var(--brown-200);
+  text-align: center;
+  font-size: .9rem;
+  margin: 12px 0 28px;
+}
+
+.reasons-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  justify-content: center;
+  max-width: 540px;
+}
+.reason-chip {
+  padding: 14px 22px;
+  border-radius: 100px;
+  border: 1.5px solid rgba(201,168,76,.35);
+  background: rgba(255,255,255,.06);
+  color: var(--brown-200);
+  font-size: .95rem;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex; align-items: center; gap: 8px;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.reason-chip:hover { border-color: var(--gold); color: var(--gold-light); background: rgba(201,168,76,.12); }
+.reason-chip.selected {
+  background: var(--gold);
+  color: var(--brown-900);
+  border-color: var(--gold);
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(201,168,76,.5);
+}
+
+.neg-actions {
+  display: flex;
+  gap: 16px;
+  margin-top: 36px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* ─── Thank you screen ─────────────────────────────────────── */
+.thankyou-icon {
+  font-size: 6rem;
+  margin-bottom: 24px;
+  animation: bounceIn .6s cubic-bezier(.36,.07,.19,.97);
+  filter: drop-shadow(0 0 30px rgba(201,168,76,.6));
+}
+@keyframes bounceIn {
+  0%   { transform: scale(0); opacity: 0; }
+  60%  { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); }
+}
+.thankyou-title {
+  font-size: clamp(1.6rem, 5vw, 2.4rem);
+  font-weight: 800;
+  text-align: center;
+  letter-spacing: .06em;
+}
+.thankyou-msg {
+  font-size: 1rem;
+  text-align: center;
+  margin-top: 12px;
+  max-width: 400px;
+  line-height: 1.7;
+}
+.thankyou-countdown {
+  margin-top: 28px;
+  font-size: .85rem;
+  color: var(--brown-300);
+  letter-spacing: .1em;
+}
+
+/* ─── Admin shortcut ──────────────────────────────────────── */
+.admin-shortcut {
+  position: fixed;
+  bottom: 20px; right: 20px;
+  background: rgba(44,26,14,.6);
+  border: 1px solid rgba(201,168,76,.15);
+  color: rgba(201,168,76,.4);
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  font-size: .72rem;
+  cursor: pointer;
+  letter-spacing: .08em;
+  transition: var(--transition);
+  z-index: 100;
+  backdrop-filter: blur(4px);
+}
+.admin-shortcut:hover { color: var(--gold); border-color: rgba(201,168,76,.4); }
+
+/* ─── Voice wave animation ────────────────────────────────── */
+.voice-wave {
+  display: flex; align-items: center; gap: 3px;
+}
+.voice-wave span {
+  width: 4px;
+  border-radius: 2px;
+  background: var(--gold);
+  animation: wave 1s ease-in-out infinite;
+}
+.voice-wave span:nth-child(1) { height: 12px; animation-delay: 0s; }
+.voice-wave span:nth-child(2) { height: 20px; animation-delay: .15s; }
+.voice-wave span:nth-child(3) { height: 16px; animation-delay: .3s; }
+.voice-wave span:nth-child(4) { height: 24px; animation-delay: .45s; }
+.voice-wave span:nth-child(5) { height: 14px; animation-delay: .6s; }
+@keyframes wave {
+  0%,100% { transform: scaleY(1); }
+  50% { transform: scaleY(.4); }
+}
+</style>
+</head>
+<body>
+
+<!-- Corner ornaments -->
+<div class="corner-ornament tl"></div>
+<div class="corner-ornament tr"></div>
+<div class="corner-ornament bl"></div>
+<div class="corner-ornament br"></div>
+
+<!-- ╔══ SCREEN 1: Main Review Screen ══════════════════════════╗ -->
+<div class="screen active" id="screen-main">
+
+  <div class="hotel-logo-wrap">
+    <img id="kiosk-logo" src="assets/logo.jpg" alt="城市酒店 City Hotel" onerror="this.style.display='none'">
+  </div>
+
+  <div class="title-zh" id="hotel-name-zh">城市酒店</div>
+  <div class="title-en" id="hotel-name-en">CITY HOTEL</div>
+
+  <div class="gold-ornament">
+    <div class="gold-ornament-line"></div>
+    <div class="gold-ornament-diamond"></div>
+    <div class="gold-ornament-line"></div>
+  </div>
+
+  <div class="main-prompt-zh" style="font-size:2.8rem;font-weight:900;color:var(--gold);letter-spacing:.15em;margin-bottom:4px;">服务点评</div>
+  <div style="font-size:1rem;color:var(--brown-300);letter-spacing:.35em;font-family:'Cormorant Garamond',serif;margin-bottom:28px;">SERVICE REVIEW</div>
+
+  <div class="main-prompt-zh" id="kiosk-prompt-zh">感谢您的入住，退房时请为我们的服务点个评！</div>
+  <div class="main-prompt-en" id="kiosk-prompt-en">Please rate our service upon check-out. Thank you!</div>
+
+  <div class="review-buttons">
+    <button class="review-btn btn-positive" onclick="submitPositive()" id="btn-positive">
+      <div class="review-btn-icon">😊</div>
+      <div class="review-btn-text-zh">好评</div>
+      <div class="review-btn-text-en">Positive</div>
+    </button>
+
+    <button class="review-btn btn-negative" onclick="showNegScreen()" id="btn-negative">
+      <div class="review-btn-icon">😞</div>
+      <div class="review-btn-text-zh">差评</div>
+      <div class="review-btn-text-en">Negative</div>
+    </button>
+  </div>
+
+  <!-- Voice prompt button -->
+  <button class="voice-btn" onclick="playVoice()" id="voice-btn">
+    <div class="voice-wave" id="voice-wave-anim">
+      <span></span><span></span><span></span><span></span><span></span>
+    </div>
+    <span id="voice-btn-label">语音提醒 Voice Prompt</span>
+  </button>
+
+  <div style="margin-top:24px;color:var(--brown-600);font-size:.75rem;letter-spacing:.1em;" id="kiosk-time"></div>
+
+</div>
+<!-- ╚══ END SCREEN 1 ══════════════════════════════════════════╝ -->
+
+
+<!-- ╔══ SCREEN 2: Negative Reason Selection ════════════════════╗ -->
+<div class="screen" id="screen-neg">
+
+  <div class="neg-title-zh">请告诉我们您的意见</div>
+  <div class="neg-title-en">PLEASE SHARE YOUR FEEDBACK</div>
+
+  <div class="gold-ornament" style="margin:16px 0;">
+    <div class="gold-ornament-line"></div>
+    <div class="gold-ornament-diamond"></div>
+    <div class="gold-ornament-line"></div>
+  </div>
+
+  <div class="neg-subtitle">您的反馈将帮助我们持续改进服务质量<br><span style="font-size:.8rem;opacity:.7;font-family:'Cormorant Garamond',serif;">Your feedback helps us improve our service quality</span></div>
+
+  <div class="reasons-grid" id="reasons-grid">
+    <!-- dynamically rendered -->
+  </div>
+
+  <div class="neg-actions">
+    <button class="btn btn-outline" style="background:rgba(255,255,255,.08);color:var(--brown-300);border-color:rgba(201,168,76,.3);" onclick="backToMain()">
+      ← 返回 Back
+    </button>
+    <button class="btn btn-gold btn-lg" onclick="submitNegative()" id="neg-submit-btn">
+      提交 Submit
+    </button>
+  </div>
+
+</div>
+<!-- ╚══ END SCREEN 2 ══════════════════════════════════════════╝ -->
+
+
+<!-- ╔══ SCREEN 3: Thank You ════════════════════════════════════╗ -->
+<div class="screen" id="screen-thanks">
+  <div class="thankyou-icon" id="thanks-icon">🌟</div>
+  <div class="thankyou-title" id="thanks-title" style="color:var(--gold);">感谢您的好评！</div>
+  <div class="thankyou-msg" id="thanks-msg" style="color:var(--brown-200);">感谢您的好评，期待再次为您服务！</div>
+  <div class="thankyou-msg" id="thanks-msg-en" style="color:var(--brown-400);font-size:.85rem;font-family:'Cormorant Garamond',serif;margin-top:8px;"></div>
+  <div class="gold-ornament" style="margin:24px 0;"><div class="gold-ornament-line"></div><div class="gold-ornament-diamond"></div><div class="gold-ornament-line"></div></div>
+  <div class="thankyou-countdown" id="countdown-msg">3 秒后自动返回 / Returning in 3s...</div>
+</div>
+<!-- ╚══ END SCREEN 3 ══════════════════════════════════════════╝ -->
+
+
+<!-- Admin shortcut (discreet) -->
+<div class="admin-shortcut" onclick="openAdmin()" title="管理后台">⚙ 管理</div>
+
+<!-- Dependencies -->
+<script src="js/db.js"></script>
+<script>
+// ─────────────────────────────────────────────────────────────
+//  Kiosk Controller
+// ─────────────────────────────────────────────────────────────
+
+let selectedReasons = [];
+let countdownTimer = null;
+let voiceSpeaking = false;
+const settings = DB.getSettings();
+
+// ── Init ──────────────────────────────────────────────────────
+function initKiosk() {
+  applySettings();
+  renderReasons();
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  // Load custom logo
+  const logo = DB.getLogo();
+  if (logo) document.getElementById('kiosk-logo').src = logo;
+
+  // Auto-play voice after 30s idle
+  scheduleVoiceReminder();
+}
+
+function applySettings() {
+  const s = DB.getSettings();
+  document.getElementById('hotel-name-zh').textContent = s.hotelName || '城市酒店';
+  document.getElementById('hotel-name-en').textContent = (s.hotelNameEn || 'CITY HOTEL').toUpperCase();
+  document.getElementById('kiosk-prompt-zh').textContent = s.voicePrompt || '感谢您的入住，退房时请为我们的服务点个评！';
+  document.getElementById('kiosk-prompt-en').textContent = s.voicePromptEn || 'Please rate our service upon check-out. Thank you!';
+}
+
+function updateClock() {
+  const now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  document.getElementById('kiosk-time').textContent =
+    `${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())}  ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+}
+
+// ── Screens ───────────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function backToMain() {
+  selectedReasons = [];
+  document.querySelectorAll('.reason-chip').forEach(c => c.classList.remove('selected'));
+  showScreen('screen-main');
+  scheduleVoiceReminder();
+}
+
+// ── 获取当前登录工号 ─────────────────────────────────────────
+function getCurrentStaff() {
+  try {
+    const session = localStorage.getItem('hr_session');
+    if (session) {
+      const user = JSON.parse(session);
+      return { staffUsername: user.username || '', staffName: user.name || '' };
+    }
+  } catch (e) {}
+  return { staffUsername: '', staffName: '' };
+}
+
+// ── Positive ──────────────────────────────────────────────────
+function submitPositive() {
+  DB.addReview({ type: 'positive', reasons: [], ...getCurrentStaff() });
+  showThanks(true);
+}
+
+// ── Negative ──────────────────────────────────────────────────
+function showNegScreen() {
+  showScreen('screen-neg');
+  clearVoiceSchedule();
+}
+
+function renderReasons() {
+  const grid = document.getElementById('reasons-grid');
+  const reasons = DB.getReasons().filter(r => r.active);
+  grid.innerHTML = '';
+  reasons.forEach(r => {
+    const chip = document.createElement('button');
+    chip.className = 'reason-chip';
+    chip.dataset.id = r.id;
+    chip.dataset.label = r.label;
+    chip.innerHTML = `${r.label} <span style="opacity:.5;font-size:.78rem;">${r.labelEn}</span>`;
+    chip.addEventListener('click', () => toggleReason(chip, r.label));
+    grid.appendChild(chip);
+  });
+}
+
+function toggleReason(chip, label) {
+  if (chip.classList.contains('selected')) {
+    chip.classList.remove('selected');
+    selectedReasons = selectedReasons.filter(r => r !== label);
+  } else {
+    chip.classList.add('selected');
+    selectedReasons.push(label);
+  }
+}
+
+function submitNegative() {
+  if (selectedReasons.length === 0) {
+    // Allow submit with no reason (optional feedback)
+    if (!confirm('您未选择任何原因，确认提交吗？\nNo reason selected. Submit anyway?')) return;
+  }
+  DB.addReview({ type: 'negative', reasons: selectedReasons, ...getCurrentStaff() });
+  selectedReasons = [];
+  document.querySelectorAll('.reason-chip').forEach(c => c.classList.remove('selected'));
+  showThanks(false);
+}
+
+// ── Thank you ─────────────────────────────────────────────────
+function showThanks(isPositive) {
+  const s = DB.getSettings();
+  const autoReturn = parseInt(s.autoReturn) || 4;
+
+  const icon = document.getElementById('thanks-icon');
+  const title = document.getElementById('thanks-title');
+  const msg = document.getElementById('thanks-msg');
+  const msgEn = document.getElementById('thanks-msg-en');
+  const countdown = document.getElementById('countdown-msg');
+
+  if (isPositive) {
+    icon.textContent = '🌟';
+    title.style.color = 'var(--gold)';
+    title.textContent = '感谢您的好评！';
+    msg.textContent = s.positiveMsg || '感谢您的好评，期待再次为您服务！';
+    msgEn.textContent = s.positiveMsgEn || 'Thank you! We look forward to welcoming you again.';
+  } else {
+    icon.textContent = '🙏';
+    title.style.color = 'var(--brown-200)';
+    title.textContent = '感谢您的宝贵意见！';
+    msg.textContent = s.negativeMsg || '非常抱歉给您带来不便，我们会认真改进！';
+    msgEn.textContent = s.negativeMsgEn || 'We apologize and will improve immediately.';
+  }
+
+  showScreen('screen-thanks');
+
+  let secs = autoReturn;
+  countdown.textContent = `${secs} 秒后自动返回 / Returning in ${secs}s...`;
+  if (countdownTimer) clearInterval(countdownTimer);
+  countdownTimer = setInterval(() => {
+    secs--;
+    countdown.textContent = `${secs} 秒后自动返回 / Returning in ${secs}s...`;
+    if (secs <= 0) {
+      clearInterval(countdownTimer);
+      backToMain();
+    }
+  }, 1000);
+}
+
+// ── Voice Prompt ──────────────────────────────────────────────
+let voiceScheduleTimer = null;
+
+function scheduleVoiceReminder() {
+  clearVoiceSchedule();
+  voiceScheduleTimer = setTimeout(() => {
+    playVoice();
+    voiceScheduleTimer = setInterval(playVoice, 60000); // Repeat every 60s
+  }, 30000); // First reminder after 30s
+}
+
+function clearVoiceSchedule() {
+  if (voiceScheduleTimer) {
+    clearTimeout(voiceScheduleTimer);
+    clearInterval(voiceScheduleTimer);
+    voiceScheduleTimer = null;
+  }
+}
+
+function playVoice() {
+  if (voiceSpeaking) return;
+  const s = DB.getSettings();
+  const text = s.voicePrompt || '尊敬的客人，感谢您的入住，退房时请为我们的服务点个评！';
+
+  if ('speechSynthesis' in window) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'zh-CN';
+    utterance.rate = 0.9;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+
+    voiceSpeaking = true;
+    utterance.onend = () => { voiceSpeaking = false; };
+    utterance.onerror = () => { voiceSpeaking = false; };
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+  }
+}
+
+function openAdmin() {
+  window.open('admin.html', '_blank');
+}
+
+// ── Start ─────────────────────────────────────────────────────
+initKiosk();
+</script>
+</body>
+</html>
