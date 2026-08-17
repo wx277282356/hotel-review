@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>房间二维码下载 | 城市酒店</title>
+<style>
+  :root{
+    --gold:#c9a84c; --gold-light:#e8c977;
+    --brown-900:#1a0f08; --brown-800:#2c1a0e; --brown-700:#3a2414;
+    --brown-300:#c9b69a; --brown-200:#e0d4c0; --white:#fff;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh;
+    background:linear-gradient(160deg,var(--brown-900) 0%,var(--brown-800) 50%,var(--brown-900) 100%);
+    color:var(--brown-200);
+    font-family:'PingFang SC','Microsoft YaHei',sans-serif;
+    padding:28px 16px 48px;
+  }
+  .wrap{max-width:1080px;margin:0 auto;}
+  header{text-align:center;margin-bottom:24px;}
+  .brand{
+    display:inline-flex;align-items:center;gap:14px;
+  }
+  .brand img{width:54px;height:54px;border-radius:14px;border:1px solid var(--gold);
+    box-shadow:0 0 5px rgba(201,168,76,.18),inset 0 0 3px rgba(255,230,160,.12);
+    background:linear-gradient(160deg,#e8c977,#c9a84c 50%,#8b6914);
+  }
+  .brand .t-zh{font-size:1.6rem;font-weight:800;color:var(--gold);letter-spacing:.1em;
+    font-family:'STSong','SimSun',serif;}
+  .brand .t-en{font-size:.7rem;color:var(--brown-300);letter-spacing:.32em;text-transform:uppercase;}
+  h1{font-size:1.3rem;color:var(--white);margin:18px 0 4px;font-weight:700;}
+  .sub{font-size:.85rem;color:var(--brown-300);letter-spacing:.05em;}
+
+  .toolbar{
+    display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:center;
+    margin:22px 0;
+  }
+  .search{
+    flex:1;min-width:220px;max-width:360px;
+    padding:11px 16px;border-radius:100px;
+    border:1px solid rgba(201,168,76,.35);
+    background:rgba(255,255,255,.06);color:var(--white);
+    font-size:.95rem;outline:none;
+  }
+  .search::placeholder{color:rgba(201,168,76,.45);}
+  .search:focus{border-color:var(--gold);background:rgba(201,168,76,.12);}
+  .btn{
+    padding:11px 20px;border-radius:100px;border:1px solid rgba(201,168,76,.35);
+    background:rgba(201,168,76,.15);color:var(--gold-light);
+    font-size:.9rem;cursor:pointer;transition:.25s;white-space:nowrap;
+  }
+  .btn:hover{background:rgba(201,168,76,.28);border-color:var(--gold);}
+  .count{font-size:.8rem;color:var(--brown-300);text-align:center;margin-bottom:14px;}
+
+  .grid{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+    gap:16px;
+  }
+  .card{
+    background:rgba(255,255,255,.05);
+    border:1px solid rgba(201,168,76,.2);
+    border-radius:16px;padding:14px;
+    display:flex;flex-direction:column;align-items:center;gap:10px;
+    transition:.25s;
+  }
+  .card:hover{border-color:rgba(201,168,76,.5);background:rgba(201,168,76,.1);transform:translateY(-3px);}
+  .card img{
+    width:120px;height:120px;object-fit:contain;background:#fff;border-radius:8px;cursor:pointer;
+  }
+  .card .room{
+    font-size:1.05rem;font-weight:700;color:var(--gold);letter-spacing:.06em;
+  }
+  .card .acts{display:flex;gap:8px;}
+  .card .acts a{
+    font-size:.78rem;padding:6px 12px;border-radius:100px;text-decoration:none;
+    border:1px solid rgba(201,168,76,.35);color:var(--gold-light);
+  }
+  .card .acts a:hover{background:rgba(201,168,76,.22);}
+  .empty{text-align:center;color:var(--brown-300);padding:40px;grid-column:1/-1;}
+
+  /* 预览弹窗 */
+  .modal{
+    display:none;position:fixed;inset:0;background:rgba(10,6,3,.85);
+    align-items:center;justify-content:center;z-index:100;padding:20px;
+  }
+  .modal.open{display:flex;}
+  .modal .box{
+    background:var(--brown-800);border:1px solid rgba(201,168,76,.4);
+    border-radius:20px;padding:24px;max-width:340px;width:100%;text-align:center;
+  }
+  .modal img{width:240px;height:240px;background:#fff;border-radius:10px;}
+  .modal .m-room{font-size:1.3rem;font-weight:800;color:var(--gold);margin:14px 0 16px;letter-spacing:.08em;}
+  .modal .m-acts{display:flex;gap:10px;justify-content:center;}
+  .modal .m-acts a{
+    padding:10px 18px;border-radius:100px;text-decoration:none;
+    border:1px solid var(--gold);color:var(--brown-900);background:var(--gold);font-weight:700;
+  }
+  .modal .close{margin-top:14px;font-size:.8rem;color:var(--brown-300);cursor:pointer;}
+  footer{text-align:center;margin-top:36px;font-size:.75rem;color:rgba(201,168,76,.4);letter-spacing:.08em;}
+  footer a{color:rgba(201,168,76,.6);text-decoration:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <img src="../assets/logo-icon.png" alt="城市酒店" onerror="this.style.display='none'">
+      <div style="text-align:left;">
+        <div class="t-zh">城市酒店</div>
+        <div class="t-en">CITY HOTEL</div>
+      </div>
+    </div>
+    <h1>房间二维码下载</h1>
+    <div class="sub">扫码进入服务点评 · 一房一码</div>
+  </header>
+
+  <div class="toolbar">
+    <input class="search" id="search" type="text" placeholder="搜索房间号，如 601、1802A…" autocomplete="off">
+    <button class="btn" id="downloadAll">下载全部（ZIP）</button>
+  </div>
+  <div class="count" id="count"></div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="modal" id="modal">
+    <div class="box">
+      <img id="m-img" src="" alt="">
+      <div class="m-room" id="m-room"></div>
+      <div class="m-acts">
+        <a id="m-dl" href="" download>下载 PNG</a>
+        <a id="m-copy" href="javascript:void(0)">复制链接</a>
+      </div>
+      <div class="close" id="m-close">关闭 ✕</div>
+    </div>
+  </div>
+
+  <footer>
+    城市酒店服务点评系统 · <a href="../index.html">返回点评页</a>
+  </footer>
+</div>
+
+<script>
+const BASE = './qrcode_';
+const EXT = '.png';
+let ROOMS = [];
+
+fetch('rooms.json')
+  .then(r => r.json())
+  .then(list => { ROOMS = list; render(''); })
+  .catch(() => {
+    document.getElementById('count').textContent = '清单加载失败：rooms.json 不存在';
+  });
+
+const grid = document.getElementById('grid');
+const countEl = document.getElementById('count');
+const search = document.getElementById('search');
+
+function render(q){
+  const kw = q.trim().toUpperCase();
+  const list = ROOMS.filter(r => r.toUpperCase().includes(kw));
+  countEl.textContent = kw
+    ? `匹配 ${list.length} / 共 ${ROOMS.length} 个房间`
+    : `共 ${ROOMS.length} 个房间二维码`;
+  if(list.length === 0){
+    grid.innerHTML = '<div class="empty">没有匹配的房间号</div>';
+    return;
+  }
+  grid.innerHTML = list.map(r => `
+    <div class="card">
+      <img src="${BASE}${r}${EXT}" alt="房间 ${r}" loading="lazy" onclick="openModal('${r}')">
+      <div class="room">${r}</div>
+      <div class="acts">
+        <a href="${BASE}${r}${EXT}" download>下载</a>
+        <a href="javascript:void(0)" onclick="copyLink('${r}')">复制</a>
+      </div>
+    </div>`).join('');
+}
+
+search.addEventListener('input', e => render(e.target.value));
+
+const modal = document.getElementById('modal');
+function openModal(r){
+  document.getElementById('m-img').src = BASE + r + EXT;
+  document.getElementById('m-room').textContent = '房间 ' + r;
+  document.getElementById('m-dl').href = BASE + r + EXT;
+  modal.classList.add('open');
+}
+document.getElementById('m-close').onclick = () => modal.classList.remove('open');
+modal.addEventListener('click', e => { if(e.target === modal) modal.classList.remove('open'); });
+
+function copyLink(r){
+  const url = location.href.replace(/index\.html$/, '') + BASE + r + EXT;
+  navigator.clipboard.writeText(url).then(
+    () => alert('已复制链接：\n' + url),
+    () => prompt('复制以下链接：', url)
+  );
+}
+
+/* 下载全部（含 JSZip CDN） */
+document.getElementById('downloadAll').addEventListener('click', async () => {
+  if(typeof JSZip === 'undefined'){
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+    document.head.appendChild(s);
+    await new Promise(res => s.onload = res);
+  }
+  const zip = new JSZip();
+  const folder = zip.folder('qrcodes');
+  const kw = search.value.trim().toUpperCase();
+  const list = ROOMS.filter(r => r.toUpperCase().includes(kw));
+  for(const r of list){
+    const res = await fetch(BASE + r + EXT);
+    folder.file('qrcode_' + r + EXT, await res.blob());
+  }
+  const blob = await zip.generateAsync({type:'blob'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = kw ? `qrcodes_${kw}.zip` : 'qrcodes_all.zip';
+  a.click();
+});
+</script>
+</body>
+</html>
