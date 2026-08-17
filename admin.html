@@ -499,7 +499,7 @@ body { background: var(--gray-100); }
           <div class="table-wrap">
             <table>
               <thead><tr>
-                <th>时间</th><th>房间号</th><th>评价</th><th>差评原因</th><th>操作工号</th><th>操作</th>
+                <th>时间</th><th>房间号</th><th>评价</th><th>差评原因</th><th>操作工号</th>
               </tr></thead>
               <tbody id="rec-table-body"></tbody>
             </table>
@@ -1038,7 +1038,6 @@ function renderRecords() {
       <td>${typeBadge}</td>
       <td style="color:var(--gray-600);">${reasons}</td>
       <td>${staffInfo}</td>
-      <td><button class="btn btn-danger btn-sm" onclick="deleteRecord(${r.id})">删除</button></td>
     </tr>`;
   }).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--gray-400);padding:32px;">暂无数据</td></tr>';
 
@@ -1056,12 +1055,8 @@ function renderRecords() {
   }
 }
 
-function deleteRecord(id) {
-  if (!confirm('确认删除该条评价记录？')) return;
-  DB.deleteReview(id);
-  renderRecords();
-  showToast('已删除');
-}
+// 删除评价功能已按数据安全要求移除：任何人（包括店总/管理员）都没有删除评价的权限。
+// 评价记录仅可查看与导出，不可删除，以保留完整审计痕迹。
 
 // ── Reason & Staff selects ────────────────────────────────────
 function renderReasonSelects() {

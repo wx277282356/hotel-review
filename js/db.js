@@ -88,9 +88,9 @@ const DB = {
   },
 
   deleteReview(id) {
-    let reviews = this.getReviews();
-    reviews = reviews.filter(r => r.id !== id);
-    localStorage.setItem(this.KEYS.REVIEWS, JSON.stringify(reviews));
+    // 出于数据安全要求：评价记录禁止任何人删除（无论前台还是后台）
+    console.warn('评价记录删除已被禁用：系统不允许删除任何评价');
+    return false;
   },
 
   // ─────────────────────────────────────────
