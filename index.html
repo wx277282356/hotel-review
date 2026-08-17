@@ -444,6 +444,7 @@ body::before {
     <span id="voice-btn-label">语音提醒 Voice Prompt</span>
   </button>
 
+  <div id="kiosk-room" style="margin-top:14px;color:var(--gold);font-size:.82rem;letter-spacing:.22em;font-weight:600;"></div>
   <div style="margin-top:24px;color:var(--brown-600);font-size:.75rem;letter-spacing:.1em;" id="kiosk-time"></div>
 
 </div>
@@ -506,6 +507,10 @@ body::before {
 let selectedReasons = [];
 let countdownTimer = null;
 let voiceSpeaking = false;
+
+// ── 从 URL 读取房间号（一房一码）────────────────────
+const urlParams = new URLSearchParams(location.search);
+const currentRoom = (urlParams.get('room') || '').trim().toUpperCase();
 const settings = DB.getSettings();
 
 // ── Init ──────────────────────────────────────────────────────
@@ -518,6 +523,11 @@ function initKiosk() {
   // Load custom logo
   const logo = DB.getLogo();
   if (logo) document.getElementById('kiosk-logo').src = logo;
+
+  // 显示当前房间号（一房一码）
+  if (currentRoom) {
+    document.getElementById('kiosk-room').textContent = '🛏 当前房间 ROOM ' + currentRoom;
+  }
 
   // Auto-play voice after 30s idle
   scheduleVoiceReminder();
@@ -565,7 +575,7 @@ function getCurrentStaff() {
 
 // ── Positive ──────────────────────────────────────────────────
 function submitPositive() {
-  DB.addReview({ type: 'positive', reasons: [], ...getCurrentStaff() });
+  DB.addReview({ type: 'positive', reasons: [], room: currentRoom, ...getCurrentStaff() });
   showThanks(true);
 }
 
@@ -605,7 +615,7 @@ function submitNegative() {
     // Allow submit with no reason (optional feedback)
     if (!confirm('您未选择任何原因，确认提交吗？\nNo reason selected. Submit anyway?')) return;
   }
-  DB.addReview({ type: 'negative', reasons: selectedReasons, ...getCurrentStaff() });
+  DB.addReview({ type: 'negative', reasons: selectedReasons, room: currentRoom, ...getCurrentStaff() });
   selectedReasons = [];
   document.querySelectorAll('.reason-chip').forEach(c => c.classList.remove('selected'));
   showThanks(false);

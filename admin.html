@@ -333,6 +333,21 @@ body { background: var(--gray-100); }
           <div class="card-title">差评原因排行 / Top Negative Reasons</div>
           <div id="reason-rank-list"></div>
         </div>
+
+        <div class="card" style="margin-top:20px;">
+          <div class="card-title" style="justify-content:space-between;">
+            <span>🛏 差评房间预警 <span style="font-size:.8rem;font-weight:400;color:var(--gray-500);">/ 近30天 Top Rooms</span></span>
+            <span style="font-size:.78rem;font-weight:400;color:var(--negative);">客房部重点关注</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>房间号</th><th>差评数</th><th>好评数</th><th>合计</th><th>差评率</th>
+              </tr></thead>
+              <tbody id="room-alert-body"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
       <!-- ── END Dashboard ────────────────────────────────────── -->
 
@@ -375,6 +390,10 @@ body { background: var(--gray-100); }
               <option value="">全部工号</option>
             </select>
           </div>
+          <div class="filter-group">
+            <span class="filter-label">房间号</span>
+            <input class="filter-select" id="rpt-room" placeholder="如 802" oninput="renderReport()" style="min-width:100px;">
+          </div>
           <button class="btn btn-gold btn-sm manager-only" onclick="exportExcel()">
             📥 导出 Excel
           </button>
@@ -414,6 +433,21 @@ body { background: var(--gray-100); }
             </table>
           </div>
         </div>
+
+        <div class="card" style="margin-top:20px;">
+          <div class="card-title">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
+            按房间统计 / By Room（有评价记录的房间）
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>房间号</th><th>好评数</th><th>差评数</th><th>合计</th><th>好评率</th>
+              </tr></thead>
+              <tbody id="rpt-room-body"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
       <!-- ── END Report ──────────────────────────────────────── -->
 
@@ -448,6 +482,10 @@ body { background: var(--gray-100); }
               <option value="">全部工号</option>
             </select>
           </div>
+          <div class="filter-group">
+            <span class="filter-label">房间号</span>
+            <input class="filter-select" id="rec-room" placeholder="如 802" oninput="renderRecords()" style="min-width:100px;">
+          </div>
           <button class="btn btn-gold btn-sm manager-only" onclick="exportRecordsExcel()">
             📥 导出 Excel
           </button>
@@ -461,7 +499,7 @@ body { background: var(--gray-100); }
           <div class="table-wrap">
             <table>
               <thead><tr>
-                <th>时间</th><th>评价</th><th>差评原因</th><th>操作工号</th><th>操作</th>
+                <th>时间</th><th>房间号</th><th>评价</th><th>差评原因</th><th>操作工号</th><th>操作</th>
               </tr></thead>
               <tbody id="rec-table-body"></tbody>
             </table>
@@ -831,6 +869,27 @@ function renderDashboard() {
       <span class="reason-rank-count">${s.count}</span>
     </div>
   `).join('');
+
+  // 差评房间预警（近30天）
+  const d30 = new Date(); d30.setDate(d30.getDate() - 30);
+  const roomStats = DB.statsByRoom(d30.toISOString().split('T')[0], new Date().toISOString().split('T')[0]);
+  const negRooms = roomStats.filter(r => r.negative > 0).slice(0, 10);
+  const alertBody = document.getElementById('room-alert-body');
+  if (negRooms.length === 0) {
+    alertBody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--gray-400);padding:20px;">近30天无差评记录 🎉</td></tr>';
+  } else {
+    alertBody.innerHTML = negRooms.map(r => {
+      const negRate = r.total > 0 ? Math.round(r.negative / r.total * 100) : 0;
+      const hot = r.negative >= 3 ? 'background:rgba(140,61,61,.12);' : '';
+      return `<tr style="${hot}">
+        <td><code style="background:var(--brown-50);padding:2px 8px;border-radius:4px;font-size:.85rem;color:var(--brown-700);">${r.room}</code></td>
+        <td><span class="badge badge-negative">${r.negative}</span></td>
+        <td><span class="badge badge-positive">${r.positive}</span></td>
+        <td>${r.total}</td>
+        <td><strong style="color:var(--negative)">${negRate}%</strong></td>
+      </tr>`;
+    }).join('');
+  }
 }
 
 // ── Report ────────────────────────────────────────────────────
@@ -854,6 +913,7 @@ function renderReport() {
   const type = document.getElementById('rpt-type').value;
   const reason = document.getElementById('rpt-reason').value;
   const staff = document.getElementById('rpt-staff').value;
+  const room = document.getElementById('rpt-room').value.trim().toUpperCase();
 
   const stats = DB.statsBy(currentPeriod, start || undefined, end || undefined);
   const labels = stats.map(s => s.period);
@@ -914,6 +974,25 @@ function renderReport() {
       </tr>`;
     }).join('');
   }
+
+  // 按房间统计表
+  const roomStats = DB.statsByRoom(start || undefined, end || undefined);
+  const roomBody = document.getElementById('rpt-room-body');
+  const filteredRoomStats = room ? roomStats.filter(r => r.room === room) : roomStats;
+  if (filteredRoomStats.length === 0) {
+    roomBody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--gray-400);padding:24px;">暂无数据</td></tr>';
+  } else {
+    roomBody.innerHTML = filteredRoomStats.map(s => {
+      const r = s.total > 0 ? Math.round(s.positive / s.total * 100) : 0;
+      return `<tr>
+        <td><code style="background:var(--brown-50);padding:2px 8px;border-radius:4px;font-size:.85rem;color:var(--brown-700);">${s.room}</code></td>
+        <td><span class="badge badge-positive">${s.positive}</span></td>
+        <td><span class="badge badge-negative">${s.negative}</span></td>
+        <td>${s.total}</td>
+        <td><strong style="color:${r < 60 ? 'var(--negative)' : 'var(--positive)'}">${r}%</strong></td>
+      </tr>`;
+    }).join('');
+  }
 }
 
 // ── Records ───────────────────────────────────────────────────
@@ -931,8 +1010,9 @@ function renderRecords() {
   const type = document.getElementById('rec-type').value || undefined;
   const reason = document.getElementById('rec-reason').value || undefined;
   const staff = document.getElementById('rec-staff').value || undefined;
+  const room = document.getElementById('rec-room').value.trim().toUpperCase() || undefined;
 
-  const reviews = DB.queryReviews({ startDate: start || undefined, endDate: end || undefined, type, reason, staff });
+  const reviews = DB.queryReviews({ startDate: start || undefined, endDate: end || undefined, type, reason, staff, room });
   const total = reviews.length;
   const totalPages = Math.max(1, Math.ceil(total / REC_PAGE_SIZE));
   if (recPage > totalPages) recPage = 1;
@@ -948,17 +1028,19 @@ function renderRecords() {
       ? '<span class="badge badge-positive">😊 好评</span>'
       : '<span class="badge badge-negative">😞 差评</span>';
     const reasons = (r.reasons || []).join('、') || '-';
+    const roomInfo = r.room ? `<code style="background:var(--brown-50);padding:2px 7px;border-radius:4px;font-size:.82rem;color:var(--brown-700);">${r.room}</code>` : '<span style="color:var(--gray-300);font-size:.8rem;">-</span>';
     const staffInfo = r.staffUsername
       ? `<span style="font-size:.82rem;"><code style="background:var(--brown-50);padding:1px 6px;border-radius:4px;">${r.staffUsername}</code><br><span style="color:var(--gray-500);">${r.staffName || ''}</span></span>`
       : '<span style="color:var(--gray-300);font-size:.8rem;">-</span>';
     return `<tr>
       <td style="white-space:nowrap;">${timeStr}</td>
+      <td>${roomInfo}</td>
       <td>${typeBadge}</td>
       <td style="color:var(--gray-600);">${reasons}</td>
       <td>${staffInfo}</td>
       <td><button class="btn btn-danger btn-sm" onclick="deleteRecord(${r.id})">删除</button></td>
     </tr>`;
-  }).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--gray-400);padding:32px;">暂无数据</td></tr>';
+  }).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--gray-400);padding:32px;">暂无数据</td></tr>';
 
   // Pagination
   const pg = document.getElementById('rec-pagination');
@@ -1273,16 +1355,16 @@ function exportRecordsExcel() {
     [`${hotelName} - 服务点评明细记录`],
     [`导出时间：${new Date().toLocaleString('zh-CN')}`],
     [],
-    ['时间', '评价类型', '差评原因', '操作工号', '员工姓名', '备注'],
+    ['时间', '房间号', '评价类型', '差评原因', '操作工号', '员工姓名', '备注'],
     ...reviews.map(r => {
       const dt = new Date(r.createdAt);
       const timeStr = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}:${String(dt.getSeconds()).padStart(2,'0')}`;
-      return [timeStr, r.type === 'positive' ? '好评' : '差评', (r.reasons || []).join('、'), r.staffUsername || '', r.staffName || '', ''];
+      return [timeStr, r.room || '', r.type === 'positive' ? '好评' : '差评', (r.reasons || []).join('、'), r.staffUsername || '', r.staffName || '', ''];
     })
   ];
 
   const ws = XLSX.utils.aoa_to_sheet(data);
-  ws['!cols'] = [{ wch: 20 }, { wch: 10 }, { wch: 30 }, { wch: 12 }, { wch: 12 }, { wch: 15 }];
+  ws['!cols'] = [{ wch: 20 }, { wch: 10 }, { wch: 10 }, { wch: 30 }, { wch: 12 }, { wch: 12 }, { wch: 15 }];
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, '评价明细');

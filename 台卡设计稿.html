@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>客房评价台卡 · 设计稿</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #2b2b2b;
+    font-family: 'PingFang SC','Microsoft YaHei',sans-serif;
+    color: #e8e8e8;
+    padding: 40px 24px;
+    display: flex; flex-direction: column; align-items: center; gap: 36px;
+  }
+  .page-title { font-size: 1.4rem; font-weight: 800; letter-spacing:.08em; color:#c9a84c; }
+  .page-sub { font-size:.85rem; color:#999; margin-top:6px; }
+
+  /* 台卡成品（A面） */
+  .stand {
+    width: 340px;
+    height: 480px;
+    background: linear-gradient(160deg, #1a0f07 0%, #2c1a0e 55%, #1a0f07 100%);
+    border-radius: 18px;
+    border: 2px solid #c9a84c;
+    box-shadow: 0 18px 50px rgba(0,0,0,.55), inset 0 0 40px rgba(201,168,76,.08);
+    padding: 26px 22px;
+    display: flex; flex-direction: column; align-items: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .stand::before {
+    content:''; position:absolute; inset:7px; border:1px solid rgba(201,168,76,.35); border-radius:12px; pointer-events:none;
+  }
+  .stand-logo {
+    width: 54px; height: 54px; border-radius: 50%;
+    background: radial-gradient(circle at 50% 40%, #c9a84c, #8b6914);
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.5rem; margin-bottom:10px; box-shadow:0 0 18px rgba(201,168,76,.5);
+  }
+  .stand-title { font-size: 1.5rem; font-weight: 800; color:#c9a84c; letter-spacing:.1em; }
+  .stand-sub { font-size:.72rem; color:#a07b32; letter-spacing:.18em; margin-top:4px; font-family:'Cormorant Garamond',serif; }
+  .stand-orn { display:flex; align-items:center; gap:10px; margin:14px 0; }
+  .stand-orn i { width:60px; height:1px; background:linear-gradient(90deg,transparent,#c9a84c,transparent); }
+  .stand-orn b { width:7px; height:7px; background:#c9a84c; transform:rotate(45deg); }
+  .stand-qr {
+    width: 200px; height: 200px; border-radius:10px; background:#fff;
+    display:flex; align-items:center; justify-content:center; padding:8px;
+    box-shadow: 0 6px 20px rgba(0,0,0,.4);
+  }
+  .stand-qr img { width:100%; height:100%; object-fit:contain; }
+  .stand-room { margin-top:16px; font-size:1.35rem; font-weight:800; color:#e8c977; letter-spacing:.06em; }
+  .stand-tip { margin-top:6px; font-size:.8rem; color:#9a7a44; }
+
+  /* 说明区 */
+  .specs { max-width: 720px; background:#1f1f1f; border:1px solid #3a3a3a; border-radius:14px; padding:24px 28px; }
+  .specs h3 { color:#c9a84c; font-size:1rem; margin-bottom:14px; letter-spacing:.05em; }
+  .specs table { width:100%; border-collapse:collapse; font-size:.85rem; }
+  .specs td { padding:8px 6px; border-bottom:1px solid #333; vertical-align:top; }
+  .specs td:first-child { color:#c9a84c; font-weight:600; width:130px; }
+  .specs td:last-child { color:#ddd; }
+  .note { font-size:.78rem; color:#888; margin-top:14px; line-height:1.7; }
+
+  /* 双面说明 */
+  .faces { display:flex; gap:24px; flex-wrap:wrap; justify-content:center; }
+  .face-tag { font-size:.78rem; color:#c9a84c; margin-bottom:8px; letter-spacing:.1em; }
+</style>
+</head>
+<body>
+
+  <div style="text-align:center;">
+    <div class="page-title">客房评价台卡 · 设计稿</div>
+    <div class="page-sub">酒店服务点评 · 一房一码 · 亚克力立牌（供广告店制作参考）</div>
+  </div>
+
+  <div class="faces">
+    <div>
+      <div class="face-tag">A 面（正面 · 客人可见）</div>
+      <div class="stand">
+        <div class="stand-logo">🏨</div>
+        <div class="stand-title">城市酒店</div>
+        <div class="stand-sub">CITY HOTEL</div>
+        <div class="stand-orn"><i></i><b></b><i></i></div>
+        <div class="stand-qr">
+          <!-- 示例二维码：实际制作时替换为 qrcodes/ 目录下对应房号 PNG -->
+          <img src="qrcodes/qrcode_802.png" alt="二维码示例">
+        </div>
+        <div class="stand-room">房间 802</div>
+        <div class="stand-tip">扫码 30 秒，为您的入住体验打分</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="specs">
+    <h3>📐 制作规格说明</h3>
+    <table>
+      <tr><td>成品尺寸</td><td>建议 90 × 130 mm（立式），亦可用 100 × 150 mm；圆角 8mm</td></tr>
+      <tr><td>材质工艺</td><td>3–5mm 亚克力 / 双色板，正面 UV 印刷；金色边框可做丝印或镭雕</td></tr>
+      <tr><td>配色</td><td>底：深棕 #1A0F07 / #2C1A0E　字与边框：金 #C9A84C</td></tr>
+      <tr><td>二维码</td><td>取自 qrcodes/ 目录，文件名 qrcode_房间号.png（如 qrcode_802.png），每房一张，对应 ?room=房间号</td></tr>
+      <tr><td>房间号</td><td>每张台卡底部印对应房间号，与二维码一一对应</td></tr>
+      <tr><td>摆放位置</td><td>床头柜 / 书桌（主点位）；电视旁或欢迎卡（次点位）</td></tr>
+      <tr><td>文案（可改）</td><td>主标题：城市酒店　副标：CITY HOTEL　提示：扫码 30 秒，为您的入住体验打分</td></tr>
+    </table>
+    <div class="note">
+      ⚠ 制作要点：① 二维码需为「一房一码」，切勿混用；② 印刷前请用手机实测扫码能打开评价页；
+      ③ 金边与深棕对比需足够，避免弱光下看不清；④ 建议先做 1–2 间样板房验证效果再批量。
+    </div>
+  </div>
+
+</body>
+</html>

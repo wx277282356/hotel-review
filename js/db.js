@@ -96,7 +96,7 @@ const DB = {
   // ─────────────────────────────────────────
   //  查询 / 统计
   // ─────────────────────────────────────────
-  queryReviews({ startDate, endDate, type, reason, staff } = {}) {
+  queryReviews({ startDate, endDate, type, reason, staff, room } = {}) {
     let reviews = this.getReviews();
 
     if (startDate) {
@@ -117,6 +117,9 @@ const DB = {
     }
     if (staff) {
       reviews = reviews.filter(r => r.staffUsername === staff);
+    }
+    if (room) {
+      reviews = reviews.filter(r => String(r.room || '').toUpperCase() === String(room).toUpperCase());
     }
 
     return reviews;
@@ -173,6 +176,20 @@ const DB = {
       map[key].total++;
     });
     return Object.values(map).sort((a, b) => b.total - a.total);
+  },
+
+  // 按房间统计（汇总各房间好评/差评数量，差评优先排序）
+  statsByRoom(startDate, endDate) {
+    const reviews = this.queryReviews({ startDate, endDate });
+    const map = {};
+    reviews.forEach(r => {
+      const key = r.room || '未记录';
+      if (!map[key]) map[key] = { room: key, positive: 0, negative: 0, total: 0 };
+      map[key][r.type]++;
+      map[key].total++;
+    });
+    return Object.values(map)
+      .sort((a, b) => b.negative - a.negative || b.total - a.total);
   },
 
   // ─────────────────────────────────────────
