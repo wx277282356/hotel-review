@@ -457,21 +457,31 @@ body::before {
   .main-prompt-zh { font-size: .92rem; line-height: 1.5; margin-bottom: 2px; padding: 0 4px; }
   .main-prompt-en { font-size: .66rem; margin-bottom: 12px; line-height: 1.4; padding: 0 8px; }
 
-  /* 评价按钮：竖排，紧凑，垂直居中作为视觉锚点 */
+  /* 评价按钮组：用 display:block + margin:0 auto 水平居中（微信 X5 内核对 flex align-items:center 居中支持不稳定，margin auto 更可靠） */
   .review-buttons {
-    flex-direction: column;
-    gap: 10px;
+    display: block;
+    width: 100%;
     max-width: 320px;
-    margin: auto auto 16px;
+    margin: 0 auto 16px;
+    text-align: center;
   }
+  /* 按钮本身 block + text-align:center（inline-block 居中），避开微信对 flex justify-content 居中支持不完整 */
   .review-btn {
+    display: block;
+    width: 100%;
     padding: 18px 14px;
     min-width: unset;
-    flex-direction: row;
-    gap: 14px;
     border-radius: 18px;
-    width: 100%;
-    justify-content: center;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+  .review-btn:last-child { margin-bottom: 0; }
+  .review-btn-icon,
+  .review-btn-text-zh,
+  .review-btn-text-en {
+    display: inline-block;
+    vertical-align: middle;
+    margin: 0 7px;
   }
   .review-btn-icon { font-size: 2.2rem; }
   .review-btn-text-zh { font-size: 1.15rem; }
