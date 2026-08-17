@@ -450,18 +450,18 @@ body::before {
     margin-top: 0;
     text-align: left;
   }
-  /* 手机端 LOGO 容器：圆角方形 46×46（更紧凑、淡） */
+  /* 手机端 LOGO 容器：圆角方形，LOGO 占比大、黄色外框收紧 */
   .hotel-logo-wrap {
-    width: 46px; height: 46px;
-    border-radius: 12px;
+    width: 58px; height: 58px;
+    border-radius: 14px;
     border-width: 1px;
-    box-shadow: 0 0 8px rgba(201,168,76,.3), inset 0 0 6px rgba(255,230,160,.2);
+    box-shadow: 0 0 5px rgba(201,168,76,.18), inset 0 0 3px rgba(255,230,160,.12);
     flex-shrink: 0;
   }
   .hotel-logo-wrap img {
-    width: 84%; height: 84%;
-    opacity: .85;
-    filter: brightness(.95) drop-shadow(0 0 4px rgba(0,0,0,.2));
+    width: 94%; height: 94%;
+    opacity: 1;
+    filter: brightness(1) drop-shadow(0 0 2px rgba(0,0,0,.18));
   }
   /* 手机端显示酒店名（之前 LOGO 是带字图，隐藏避免重复；现在 LOGO 是纯图标了，需显示） */
   .title-zh, .title-en {
@@ -553,8 +553,8 @@ body::before {
 
 /* 更小屏幕（如 iPhone SE 320px）*/
 @media (max-width: 360px) {
-  .hotel-logo-wrap { width: 42px; height: 42px; border-radius: 11px; }
-  .hotel-logo-wrap img { width: 84%; height: 84%; }
+  .hotel-logo-wrap { width: 52px; height: 52px; border-radius: 13px; }
+  .hotel-logo-wrap img { width: 94%; height: 94%; }
   .title-zh { font-size: 1.25rem; }
   .title-en { font-size: .6rem; }
   .review-btn { padding: 12px 6px; }
