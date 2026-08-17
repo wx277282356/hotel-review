@@ -457,12 +457,12 @@ body::before {
   .main-prompt-zh { font-size: .92rem; line-height: 1.5; margin-bottom: 2px; padding: 0 4px; }
   .main-prompt-en { font-size: .66rem; margin-bottom: 12px; line-height: 1.4; padding: 0 8px; }
 
-  /* 评价按钮：竖排，紧凑，margin-top:auto 让按钮成为视觉锚点 */
+  /* 评价按钮：竖排，紧凑，垂直居中作为视觉锚点 */
   .review-buttons {
     flex-direction: column;
     gap: 10px;
     max-width: 320px;
-    margin-top: auto;
+    margin: auto auto 16px;
   }
   .review-btn {
     padding: 18px 14px;
@@ -539,8 +539,8 @@ body::before {
     <img id="kiosk-logo" src="assets/logo.jpg" alt="城市酒店 City Hotel" onerror="this.style.display='none'">
   </div>
 
-  <div class="title-zh" id="hotel-name-zh">城市酒店</div>
-  <div class="title-en" id="hotel-name-en">CITY HOTEL</div>
+  <div class="title-zh" id="hotel-name-zh" style="display:none;">城市酒店</div>
+  <div class="title-en" id="hotel-name-en" style="display:none;">CITY HOTEL</div>
 
   <div class="gold-ornament">
     <div class="gold-ornament-line"></div>
