@@ -93,6 +93,18 @@ body::before {
   filter: drop-shadow(0 0 8px rgba(0,0,0,.25));
   animation: logoPulse 3s ease-in-out infinite;
 }
+/* 自定义 LOGO（后台上传）：取消金底与混合，干净展示酒店自有品牌图 */
+.hotel-logo-wrap.custom-logo {
+  background: transparent;
+  border-color: rgba(201,168,76,.5);
+  box-shadow: 0 0 14px rgba(201,168,76,.25);
+}
+.hotel-logo-wrap.custom-logo img {
+  width: 100%; height: 100%;
+  mix-blend-mode: normal;
+  filter: drop-shadow(0 0 6px rgba(0,0,0,.2));
+  animation: none;
+}
 @keyframes logoPulse {
   0%,100% { filter: drop-shadow(0 0 20px rgba(201,168,76,.4)); }
   50% { filter: drop-shadow(0 0 36px rgba(201,168,76,.7)); }
@@ -463,6 +475,16 @@ body::before {
     opacity: 1;
     filter: brightness(1) drop-shadow(0 0 2px rgba(0,0,0,.18));
   }
+  /* 手机端自定义 LOGO：同样取消金底与淡化，干净展示 */
+  .hotel-logo-wrap.custom-logo {
+    background: transparent;
+    border-color: rgba(201,168,76,.45);
+    box-shadow: 0 0 4px rgba(201,168,76,.15);
+  }
+  .hotel-logo-wrap.custom-logo img {
+    width: 100%; height: 100%;
+    mix-blend-mode: normal;
+  }
   /* 手机端显示酒店名（之前 LOGO 是带字图，隐藏避免重复；现在 LOGO 是纯图标了，需显示） */
   .title-zh, .title-en {
     display: block;
@@ -695,9 +717,14 @@ function initKiosk() {
   updateClock();
   setInterval(updateClock, 1000);
 
-  // Load custom logo
+  // Load custom logo（酒店管理员在后台上传）
   const logo = DB.getLogo();
-  if (logo) document.getElementById('kiosk-logo').src = logo;
+  const logoWrap = document.querySelector('.hotel-logo-wrap');
+  if (logo) {
+    document.getElementById('kiosk-logo').src = logo;
+    // 自定义 LOGO：去掉金底与混合模式，干净展示酒店自己的品牌图
+    if (logoWrap) logoWrap.classList.add('custom-logo');
+  }
 
   // 显示当前房间号（一房一码）
   if (currentRoom) {
