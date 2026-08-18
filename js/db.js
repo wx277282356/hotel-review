@@ -57,6 +57,10 @@ const DB = {
         pmsEnabled: false,   // 捷信达PMS接口开关（预留）
         pmsEndpoint: '',     // PMS API 地址（预留）
         pmsToken: '',        // PMS API Token（预留）
+        // ── 数据聚合后端（跨设备汇总）──
+        syncEnabled: false,  // 是否启用后端同步
+        syncEndpoint: '',    // 后端地址，如 https://review.xxx.com
+        syncToken: '',       // 管理员令牌（与服务器端 ADMIN_TOKEN 一致）
       };
       localStorage.setItem(this.KEYS.SETTINGS, JSON.stringify(defaultSettings));
     }
@@ -79,6 +83,9 @@ const DB = {
     review.createdAt = new Date().toISOString();
     reviews.unshift(review);
     localStorage.setItem(this.KEYS.REVIEWS, JSON.stringify(reviews));
+
+    // ── 异步同步到聚合后端（断网时本地兜底，联网后由后台补拉）──
+    this.pushToBackend(review);
 
     // ── 捷信达 PMS 接口预留 ──────────────────────────────
     // this._syncToPMS(review);
@@ -276,6 +283,67 @@ const DB = {
 
   saveLogo(base64) {
     localStorage.setItem(this.KEYS.LOGO, base64);
+  },
+
+  // ─────────────────────────────────────────
+  //  数据聚合后端（跨设备汇总）
+  // ─────────────────────────────────────────
+  getSyncConfig() {
+    const s = this.getSettings();
+    return {
+      enabled: !!s.syncEnabled,
+      endpoint: (s.syncEndpoint || '').trim().replace(/\/+$/, ''),
+      token: (s.syncToken || '').trim(),
+    };
+  },
+
+  // 客人提交后异步推送（best-effort，失败不影响本地）
+  pushToBackend(review) {
+    const cfg = this.getSyncConfig();
+    if (!cfg.enabled || !cfg.endpoint) return;
+    const payload = {
+      id: review.id,
+      type: review.type,
+      reasons: review.reasons || [],
+      room: review.room || '',
+      staffUsername: review.staffUsername || '',
+      staffName: review.staffName || '',
+      createdAt: review.createdAt,
+    };
+    fetch(cfg.endpoint + '/api/review', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }).catch(() => { /* 联网后由 syncPull 补传 */ });
+  },
+
+  // 后台拉全量汇总：以 id 并集合并本地与后端，并把本地独有补传
+  async syncPull() {
+    const cfg = this.getSyncConfig();
+    if (!cfg.enabled || !cfg.endpoint) return false;
+    try {
+      const res = await fetch(cfg.endpoint + '/api/reviews', {
+        headers: { 'X-Admin-Token': cfg.token },
+      });
+      if (!res.ok) return false;
+      const data = await res.json();
+      const remote = data.reviews || [];
+
+      const map = {};
+      for (const r of this.getReviews()) map[r.id] = r;
+      for (const r of remote) if (!map[r.id]) map[r.id] = r;
+
+      const merged = Object.values(map);
+      localStorage.setItem(this.KEYS.REVIEWS, JSON.stringify(merged));
+
+      // 本地有、远程没有的（曾离线提交）→ 补传
+      const localOnly = merged.filter(r => !remote.some(x => x.id === r.id));
+      for (const r of localOnly) this.pushToBackend(r);
+
+      return true;
+    } catch (e) {
+      return false;
+    }
   },
 
   // ─────────────────────────────────────────

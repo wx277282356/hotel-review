@@ -608,6 +608,32 @@ body { background: var(--gray-100); }
           </div>
         </div>
 
+        <div class="settings-section">
+          <div class="settings-section-title">☁️ 数据聚合后端（跨设备汇总）</div>
+          <div style="background:var(--brown-50);border-radius:var(--radius-sm);padding:16px;font-size:.85rem;color:var(--brown-600);line-height:1.7;border-left:3px solid var(--gold);">
+            <strong>作用：</strong>开启后，客人在任意手机/平板提交的评价都会汇总到你<strong>自己部署的后端服务器</strong>，
+            之后在<strong>任意一台设备</strong>（手机、平板、电脑）登录后台，都能查看全部汇总数据。<br>
+            <span style="color:var(--gray-400);font-size:.78rem;">* 部署方式见项目 server/README.md；后端地址需为 HTTPS。</span>
+          </div>
+          <div style="margin-top:16px;display:flex;align-items:center;gap:8px;">
+            <label class="toggle-switch">
+              <input type="checkbox" id="s-sync-enabled">
+              <span class="toggle-slider"></span>
+            </label>
+            <span style="font-size:.85rem;color:var(--gray-600);">启用跨设备同步</span>
+          </div>
+          <div style="margin-top:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+            <div class="form-group" style="flex:1;min-width:240px;margin-bottom:0;">
+              <label class="form-label">后端地址</label>
+              <input class="form-control" id="s-sync-endpoint" placeholder="https://review.你的域名.com">
+            </div>
+            <div class="form-group" style="flex:1;min-width:200px;margin-bottom:0;">
+              <label class="form-label">管理员令牌</label>
+              <input class="form-control" id="s-sync-token" type="password" placeholder="与服务器端 ADMIN_TOKEN 一致">
+            </div>
+          </div>
+        </div>
+
         <button class="btn btn-gold" onclick="saveSettings()">💾 保存设置 Save</button>
       </div>
       <!-- ── END Settings ────────────────────────────────────── -->
@@ -768,13 +794,18 @@ function updateTopbarClock() {
 // ── Navigation ────────────────────────────────────────────────
 const PAGE_TITLES = { dashboard:'数据看板', report:'统计报表', records:'评价记录', settings:'系统设置', users:'账号管理' };
 
-function navigate(page) {
+async function navigate(page) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + page).classList.add('active');
   document.querySelectorAll('.nav-item').forEach(b => {
     b.classList.toggle('active', b.dataset.page === page);
   });
   document.getElementById('page-title').textContent = PAGE_TITLES[page] || page;
+
+  // 进入数据页前先从聚合后端拉全量汇总（未启用则秒过）
+  if (page === 'dashboard' || page === 'report' || page === 'records') {
+    await DB.syncPull();
+  }
 
   if (page === 'dashboard') renderDashboard();
   else if (page === 'report') { initReportDates(); renderStaffSelects(); renderReport(); }
@@ -1112,6 +1143,10 @@ function loadSettingsForm() {
   document.getElementById('s-neg-en').value = s.negativeMsgEn || '';
   document.getElementById('s-auto-return').value = s.autoReturn || 4;
 
+  document.getElementById('s-sync-enabled').checked = !!s.syncEnabled;
+  document.getElementById('s-sync-endpoint').value = s.syncEndpoint || '';
+  document.getElementById('s-sync-token').value = s.syncToken || '';
+
   const logo = DB.getLogo();
   if (logo) document.getElementById('logo-preview').src = logo;
 }
@@ -1127,6 +1162,9 @@ function saveSettings() {
     negativeMsg: document.getElementById('s-neg-zh').value,
     negativeMsgEn: document.getElementById('s-neg-en').value,
     autoReturn: parseInt(document.getElementById('s-auto-return').value) || 4,
+    syncEnabled: document.getElementById('s-sync-enabled').checked,
+    syncEndpoint: document.getElementById('s-sync-endpoint').value.trim(),
+    syncToken: document.getElementById('s-sync-token').value.trim(),
   });
   applySidebarUser();
   showToast('✅ 设置已保存');

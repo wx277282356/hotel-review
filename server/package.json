@@ -1,0 +1,13 @@
+{
+  "name": "hotel-review-sync",
+  "version": "1.0.0",
+  "description": "城市酒店点评系统 - 零依赖聚合后端（Node 内置 http + 文件存储）",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=14"
+  },
+  "license": "MIT"
+}
